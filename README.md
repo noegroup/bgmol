@@ -1,4 +1,4 @@
-ommsystems
+openmmsystems
 ==============================
 [//]: # (Badges)
 [![Travis Build Status](https://travis-ci.com/REPLACE_WITH_OWNER_ACCOUNT/ProjectName.svg?branch=master)](https://travis-ci.com/REPLACE_WITH_OWNER_ACCOUNT/ProjectName)
@@ -20,19 +20,19 @@ Make sure that you are in a Python/conda environment that has OpenMM installed.
 
 Clone the code
 ```
-git clone git@github.com:noegroup/ommsystems.git
+git clone git@github.com:noegroup/openmmsystems.git
 ```
 
 And install
 ```
-cd ommsystems
+cd openmmsystems
 python setup.py install
 ```
 
 
 ### Quickstart: Example
 ```python
-from ommsystems import *
+from openmmsystems import *
 
 # get data and OpenMMSystem instance
 bpti_data = get_data("bpti_implicit_mini_example")
@@ -58,22 +58,22 @@ or directory name).
 
 Subclasses of `OpenMMSystem` can be created via their constructor:
 ```python
-from ommsystems import BPTIImplicit
+from openmmsystems import BPTIImplicit
 bpti = BPTIImplicit()
 ```
 
 All available systems can also be created via their identifier:
 
 ```python
-from ommsystems import get_system
+from openmmsystems import get_system
 ala = get_system("AlanineDipeptideImplicit")  # this is a system defined in openmmtools_testsystems
 print(ala.info())
 ```
 
 Identifiers can be:
-1) Class names in `ommsystems.systems` (subclasses of `ommsystems.OpenMMSystem`)
-2) Directory names in `ommsystems/systems` (each subdirectory defines a system, as specified below)
-3) Class names in `ommsystems/openmmtools_testsystems` (subclasses of `openmmtools_testsystems.TestSystem`)
+1) Class names in `openmmsystems.systems` (subclasses of `openmmsystems.OpenMMSystem`)
+2) Directory names in `openmmsystems/systems` (each subdirectory defines a system, as specified below)
+3) Class names in `openmmsystems/openmmtools_testsystems` (subclasses of `openmmtools_testsystems.TestSystem`)
 
 `OpenMMSystem` instances may have keyword arguments, for example:
 
@@ -96,21 +96,21 @@ This means that not all samples are accessible for all users; they may require a
 You can list all registered data (sets of coordinates, forces, energies, velocities) for a system:
 
 ```python
-from ommsystems import list_all_data
+from openmmsystems import list_all_data
 list_all_data("AlanineDipeptideImplicit")
 ```
 
 You can also list only the data sets that are accessible for you from your machine:
 
 ```python
-from ommsystems import list_accessible_data
+from openmmsystems import list_accessible_data
 list_accessible_data("AlanineDipeptideImplicit")
 ```
 
 or data that is available for a given set of constructor arguments
 
 ```python
-from ommsystems import list_accessible_data
+from openmmsystems import list_accessible_data
 ala_samples = list_accessible_data("HarmonicOscillator", mass=39.948*unit.amu)
 ```
 
@@ -118,7 +118,7 @@ Samples also have unique identifiers (the name of a yaml file, as specified belo
 ```python
 bpti_data = get_data("bpti_implicit_mini_example")
 print(bpti_data.info())
-bpti_data.download()  # gets stored in $HOME/ommsystems_data/samples
+bpti_data.download()  # gets stored in $HOME/openmmsystems_data/samples
 bpti_data.read() # load data into memory
 bpti_data.randomize() # random permutation
 
@@ -135,12 +135,12 @@ bpti_data = bpti_data.create_openmm_system()
 
 ### Adding Systems to the Repository
 
-The preferred way to add systems is by adding a subclass of `OpenMMSystem` to the `ommsystems.systems` module, 
+The preferred way to add systems is by adding a subclass of `OpenMMSystem` to the `openmmsystems.systems` module, 
 see examples therein. 
 
 ### Adding Samples to the Repository
 
-To register data for a system, add a yaml file to the ommsystems/samples directory.
+To register data for a system, add a yaml file to the openmmsystems/samples directory.
 The name of the yaml file serves as the identifier for the data set. The yaml file has the following format:
 
 ```
@@ -151,7 +151,7 @@ info:
     temperature: Temperature at which samples were created (in Kelvin).
     author: Who created the data?
     date: When was the data created?
-    ommsystems_version: (optional) Which version of ommsystems was used?
+    openmmsystems_version: (optional) Which version of openmmsystems was used?
     openmm_version: Which version of openmm was used for sampling?
     num_frames: Number of frames contained in the data set.
     size: (approximate) size of the data [specify number in KB, MB, GB]
@@ -177,14 +177,14 @@ output_interval: Spacing between trajectory frames.
 
 The integrator and output interval may be used later down the road to extend data sets.
 
-To facilitate writing these yml files, a terminal command `ommsystems register` and a python function
-`ommsystems.register` are provided.
+To facilitate writing these yml files, a terminal command `openmmsystems register` and a python function
+`openmmsystems.register` are provided.
 
 
 ### Customization
 
-Instead of accessing samples from the ommsystems repository, you can also keep a local data set.
-Link your local samples directory by creating a file `.ommsystems.yaml` in your home directory and specify:
+Instead of accessing samples from the openmmsystems repository, you can also keep a local data set.
+Link your local samples directory by creating a file `.openmmsystems.yaml` in your home directory and specify:
 
 ```
 samples_paths:
