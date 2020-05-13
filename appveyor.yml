@@ -38,7 +38,7 @@ install:
 build: false
 
 test_script:
-  - pytest -v --cov=ommsystems ommsystems\\tests
+  - pytest -v --cov=openmmsystems openmmsystems\\tests
 
 on_success:
   - codecov

@@ -21,7 +21,7 @@ except:
 
 setup(
     # Self-descriptive entries which should always be present
-    name='ommsystems',
+    name='openmmsystems',
     author='noegroup',
     author_email='andreas.kraemer@fu-berlin.de',
     description=short_description[0],

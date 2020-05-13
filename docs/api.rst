@@ -4,4 +4,4 @@ API Documentation
 .. autosummary::
    :toctree: autosummary
 
-   ommsystems.canvas
+   openmmsystems.canvas
