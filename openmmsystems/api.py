@@ -1,5 +1,5 @@
 """
-High-level API functions
+High-level API
 """
 
 from openmmsystems import _openmmtools_testsystems

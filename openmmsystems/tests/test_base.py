@@ -1,3 +1,4 @@
+"""Test functionality of the system classes in the base module"""
 
 from simtk import unit
 from simtk.openmm import app
@@ -17,6 +18,7 @@ class SomeSystem(OpenMMSystem):
 
 
 def test_parameters():
+    """Test specification of system parameters."""
     s = SomeSystem()
     s.a = s.system_parameter("a", True, False)
     s.system_parameter("b", 1.0, 0.0)

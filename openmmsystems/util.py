@@ -7,6 +7,9 @@ from simtk.openmm import app
 from simtk.openmm.app.internal.singleton import Singleton
 import yaml
 
+# ==========================================================================================
+# YAML utilities
+# ==========================================================================================
 
 def quantity_representer(dumper, data):
     """Converts quantity object into a yaml string."""
@@ -35,8 +38,8 @@ def quantity_constructor(loader, node):
 
 
 _OPENMM_SINGLETONS = [
-    getattr(app, key) for key,value in app.__dict__.items()
-    if isinstance(getattr(app, key), Singleton)
+    object for object in app.__dict__.values()
+    if isinstance(object, Singleton)
 ]
 
 
@@ -63,6 +66,10 @@ def yaml_load(stream, Loader=yaml.SafeLoader):
     yaml.add_constructor('!quantity', quantity_constructor, Loader=Loader)
     yaml.add_constructor('!openmm', singleton_constructor, Loader=Loader)
     return yaml.load(stream, Loader=Loader)
+
+# ==========================================================================================
+# Exceptions
+# ==========================================================================================
 
 
 class OpenMMSystemsException(Exception):

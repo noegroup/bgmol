@@ -1,4 +1,6 @@
-
+"""
+This module contains all implementations of OpenMMSystems.
+"""
 from simtk import unit
 from simtk.openmm import app
 from openmmsystems.base import OpenMMSystem

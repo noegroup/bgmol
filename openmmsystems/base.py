@@ -1,19 +1,20 @@
+"""Base classes for systems."""
 
-from collections import OrderedDict
-import copy
+
 import io
-import inspect
 
 from simtk import openmm, unit
 from simtk.openmm import app
 import numpy as np
 
-from openmmsystems.util import yaml_dump, yaml_load, OpenMMSystemsException
+from openmmsystems.util import yaml_dump, OpenMMSystemsException
 from openmmsystems import _openmmtools_testsystems
 
 
 class OpenMMSystem:
-    """Abstract base class for test systems, demonstrating how to implement a test system.
+    """Abstract base class for testsystems.
+    The implementation is based on the openmmtools.TestSystem class.
+    It adds storing parameters in order to construct the testsystem from a compact yaml file.
 
     Parameters
     ----------
@@ -26,34 +27,6 @@ class OpenMMSystem:
         positions of test system
     topology : list
         topology of the test system
-
-    Notes
-    -----
-
-    Unimplemented methods will default to the base class methods, which raise a NotImplementedException.
-
-    Examples
-    --------
-
-    Create a test system.
-
-    >>> testsystem = TestSystem()
-
-    Retrieve a deep copy of the System object.
-
-    >>> system = testsystem.system
-
-    Retrieve a deep copy of the positions.
-
-    >>> positions = testsystem.positions
-
-    Retrieve a deep copy of the topology.
-
-    >>> topology = testsystem.topology
-
-    Serialize system and positions to XML (to aid in debugging).
-
-    >>> (system_xml, positions_xml) = testsystem.serialize()
 
     """
 
@@ -217,6 +190,7 @@ class XMLOpenMMSystem(OpenMMSystem):
     """System parsed from a directory (xml files)."""
     def __init__(self):
         raise NotImplementedError
+
     @staticmethod
     def from_context(context, name, author=None):
         raise NotImplementedError
@@ -254,4 +228,5 @@ class OpenMMToolsTestSystem(OpenMMSystem):
 
     @property
     def name(self):
+        """The name of the test system."""
         return self._name
