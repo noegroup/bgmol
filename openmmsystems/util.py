@@ -3,6 +3,8 @@ Utility module
 """
 
 from simtk import unit
+from simtk.openmm import app
+from simtk.openmm.app.internal.singleton import Singleton
 import yaml
 
 
@@ -22,7 +24,7 @@ def quantity_constructor(loader, node):
     split = string.replace(' ','').split('/')
     numerator_units = split[0].split('*')
     denominator_units = [] if len(split) == 1 else split[1].replace('(','').replace(')','').split('*')
-    v = float(numerator_units[0])
+    v = float(numerator_units[0]) if '.' in numerator_units[0] else int(numerator_units[0])
     u = unit.dimensionless
     for nu in numerator_units[1:]:
         assert hasattr(unit, nu)
@@ -32,13 +34,37 @@ def quantity_constructor(loader, node):
     return unit.Quantity(v, u)
 
 
-def yaml_dump_with_quantity(data, stream):
-    """A version of yaml.dump with quantity objects."""
+_OPENMM_SINGLETONS = [
+    getattr(app, key) for key,value in app.__dict__.items()
+    if isinstance(getattr(app, key), Singleton)
+]
+
+
+def singleton_representer(dumper, data):
+    """Converts simtk.openmm.app.internal.Singleton object into a yaml string."""
+    return dumper.represent_scalar('!openmm', data.__class__.__name__)
+
+
+def singleton_constructor(loader, node):
+    """Parser for simtk.openmm.app.internal.Singleton objects from yaml file."""
+    string = loader.construct_scalar(node)
+    return getattr(app, string)
+
+
+def yaml_dump(data, stream):
+    """A version of yaml.dump with custom representers."""
     yaml.add_representer(unit.Quantity, quantity_representer)
+    yaml.add_multi_representer(Singleton, singleton_representer)
     yaml.dump(data, stream)
 
 
-def yaml_load_with_quantity(stream, Loader=yaml.SafeLoader):
-    """A version of yaml.load with quantity objects."""
+def yaml_load(stream, Loader=yaml.SafeLoader):
+    """A version of yaml.load with custom constructors."""
     yaml.add_constructor('!quantity', quantity_constructor, Loader=Loader)
+    yaml.add_constructor('!openmm', singleton_constructor, Loader=Loader)
     return yaml.load(stream, Loader=Loader)
+
+
+class OpenMMSystemsException(Exception):
+    """Base Exception for Package"""
+    pass
