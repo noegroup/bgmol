@@ -12,7 +12,7 @@ A collection of OpenMM systems and data generated for those systems.
 
 This package is an extension of the `openmmtools.testsystems` module with a twofold aim:
 1) It contains a collection of OpenMM systems (with initial positions and topologies).
-2) It provides infrastructure for fetching and sharing data (coordinates, forces, energies, velocities)
+2) It provides infrastructure for fetching and sharing data (positions, forces, energies, velocities)
 generated for these systems.
 
 ### Quickstart: Install
@@ -42,18 +42,18 @@ print(bpti_data.info())
 # download data
 bpti_data.download()
 bpti_data.read()
-print(bpti_data.coordinates)
+print(bpti_data.positions)
 trajectory = bpti_data.to_mdtraj()
 
 # evaluate energies
 from simtk.openmm import LangevinIntegrator
 energy_bridge = OpenMMEnergyBridge(bpti.system, LangevinIntegrator(300,1,0.0002))
-energies, force = energy_bridge.evaluate(bpti_data.coordinates)
+energies, force = energy_bridge.evaluate(bpti_data.positions)
 ```
 
 ### Using Systems from this Repository
 
-Each `OpenMMSystem` has a system object, a topology, a set of initial coordinates, and a unique identifier (the class 
+Each `OpenMMSystem` has a system object, a topology, a set of initial positions, and a unique identifier (the class 
 or directory name).
 
 Subclasses of `OpenMMSystem` can be created via their constructor:
@@ -93,7 +93,7 @@ The samples created for the different systems do not live in the repository
 but in some path (webserver, compute cluster, local network, local machine).
 This means that not all samples are accessible for all users; they may require access to specific clusters, etc.
 
-You can list all registered data (sets of coordinates, forces, energies, velocities) for a system:
+You can list all registered data (sets of positions, forces, energies, velocities) for a system:
 
 ```python
 from openmmsystems import list_all_data
@@ -123,7 +123,7 @@ bpti_data.read() # load data into memory
 bpti_data.randomize() # random permutation
 
 # Now, randomly reordered positions and forces are accessible as numpy arrays
-bpti_data.coordinates
+bpti_data.positions
 bpti_data.forces
 ```
 
@@ -144,17 +144,19 @@ To register data for a system, add a yaml file to the openmmsystems/samples dire
 The name of the yaml file serves as the identifier for the data set. The yaml file has the following format:
 
 ```
+system:
+    identifier: System identifier (class name or directory name).
+    parameters: Keyword arguments to the system constructor.
+
 info:
     description: A short description (which method was used for sampling).
-    system: The system identifier (class or directory name).
-    arguments: Keyword arguments to the system constructor.
     temperature: Temperature at which samples were created (in Kelvin).
     author: Who created the data?
     date: When was the data created?
-    openmmsystems_version: (optional) Which version of openmmsystems was used?
-    openmm_version: Which version of openmm was used for sampling?
     num_frames: Number of frames contained in the data set.
     size: (approximate) size of the data [specify number in KB, MB, GB]
+    openmmsystems_version: (optional) Which version of openmmsystems was used?
+    openmm_version: Which version of openmm was used for sampling?
 
 location:
     server: A server or hostname from which the data is accessible.
@@ -165,7 +167,7 @@ datafiles:
     # The data files (in format .npy or any mdtraj-readable format)
     # The number of files must be the same (or zero) for each type of data.
     # If a file (for example an HDF5 trajectory) contains multiple types of data, it can appear in multiple lines.
-    coordinates: a list of filenames containing coordinates (and - for trajectory files - box dimensions)
+    positions: a list of filenames containing positions (and - for trajectory files - box dimensions)
     velocities: (optional) a list of filenames containing velocities
     forces: (optional) a list of filenames containing forces
     energies: (optional) a list of filenames containing energies
@@ -203,7 +205,7 @@ TODO: simple API to extend a data set.
 
 ### Copyright
 
-Copyright (c) 2020, Andreas Krämer
+Copyright (c) 2020, noegroup
 
 
 #### Acknowledgements
