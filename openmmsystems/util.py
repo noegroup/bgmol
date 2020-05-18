@@ -2,6 +2,9 @@
 Utility module
 """
 
+import os
+from pkg_resources import resource_filename
+
 from simtk import unit
 from simtk.openmm import app
 from simtk.openmm.app.internal.singleton import Singleton
@@ -75,3 +78,28 @@ def yaml_load(stream, Loader=yaml.SafeLoader):
 class OpenMMSystemsException(Exception):
     """Base Exception for Package"""
     pass
+
+
+# ==========================================================================================
+# Paths
+# ==========================================================================================
+
+def get_data_file(relative_path):
+    """Get the full path to one of the reference files.
+
+    In the source distribution, these files are in ``openmmtools/_openmmtools_data/*/``,
+    but on installation, they're moved to somewhere in the user's python
+    site-packages directory.
+
+    Parameters
+    ----------
+    name : str
+        Name of the file to load (with respect to the repex folder).
+
+    """
+    fn = resource_filename('openmmsystems.systems', relative_path)
+
+    if not os.path.exists(fn):
+        raise ValueError("Sorry! %s does not exist. If you just added it, you'll have to re-install" % fn)
+
+    return fn

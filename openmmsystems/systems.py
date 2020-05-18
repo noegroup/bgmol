@@ -1,20 +1,27 @@
 """
-This module contains all implementations of OpenMMSystems.
+Implementations of OpenMMSystems.
 """
+
 from simtk import unit
 from simtk.openmm import app
 from openmmsystems.base import OpenMMSystem
+from openmmsystems.util import get_data_file
 
 
 class ImplicitBPTI(OpenMMSystem):
+    """Aprotinin in implicit solvent."""
     def __init__(self, forcefield=['amber99sbildn.xml', 'amber99_obc.xml']):
+
         # call parent constructor
-        super(self, ImplicitBPTI).__init__()
+        super(ImplicitBPTI, self).__init__()
+
         # register parameters
-        self.system_parameter("forcefield", forcefield, default=['amber99sbildn.xml', 'amber99_obc.xml'])
+        self.forcefield = self.system_parameter(
+            "forcefield", forcefield, default=['amber99sbildn.xml', 'amber99_obc.xml']
+        )
 
         # create system, positions, and topology
-        pdb = app.PDBFile('bpti_top.pdb')
+        pdb = app.PDBFile(get_data_file('data/bpti_top.pdb'))
         forcefield = app.ForceField(*forcefield)
         self._system = forcefield.createSystem(
             pdb.topology, removeCMMotion=False,
