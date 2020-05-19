@@ -51,7 +51,6 @@ class OpenMMSystem:
 
         self._parameter_defaults = {}
 
-
     @property
     def system(self):
         """The simtk.openmm.System object corresponding to the test system."""

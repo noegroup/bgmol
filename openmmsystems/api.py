@@ -33,7 +33,11 @@ def get_system_names():
     names (list of str):
         The names of all available systems.
     """
-    return get_openmmtools_system_names() + get_openmmsystems_names()
+    return get_toysystem_names() + get_openmmsystems_names() + get_openmmtools_system_names()
+
+
+def get_toysystem_names():
+    return []
 
 
 def get_openmmtools_system_names():
