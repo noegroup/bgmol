@@ -217,7 +217,7 @@ class OpenMMToolsTestSystem(OpenMMSystem):
         TestsystemClass = getattr(_openmmtools_testsystems, name)
         assert issubclass(TestsystemClass, _openmmtools_testsystems.TestSystem)
         testsystem = TestsystemClass(**kwargs)
-        self._testsytem = testsystem
+        self._testsystem = testsystem
         self._topology = testsystem.topology
         self._system = testsystem.system
         self._positions = testsystem.positions
@@ -233,4 +233,4 @@ class OpenMMToolsTestSystem(OpenMMSystem):
         return self._name
 
     def __getattr__(self, item):
-        return getattr(self._testsytem, item)
+        return getattr(self._testsystem, item)

@@ -43,6 +43,7 @@ def test_get_system_by_name_or_yaml():
     # openmmtools testsystem
     harmonic = get_system_by_name("HarmonicOscillator", K=4*unit.kilojoule_per_mole/unit.nanometer**2)
     assert isinstance(harmonic, OpenMMToolsTestSystem)
+    assert isinstance(harmonic._testsystem, HarmonicOscillator)
     assert harmonic.name == "HarmonicOscillator"
     assert is_quantity_close(harmonic.K, 4*unit.kilojoule_per_mole/unit.nanometer**2)
 
@@ -51,5 +52,6 @@ def test_get_system_by_name_or_yaml():
     print(stream.getvalue())
     harmonic2 = get_system_by_yaml(stream)
     assert isinstance(harmonic2, OpenMMToolsTestSystem)
+    assert isinstance(harmonic._testsystem, HarmonicOscillator)
     assert harmonic2.name == "HarmonicOscillator"
     assert is_quantity_close(harmonic2.K, 4*unit.kilojoule_per_mole/unit.nanometer**2)
