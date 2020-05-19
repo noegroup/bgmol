@@ -5,14 +5,33 @@ Utility module
 import os
 from pkg_resources import resource_filename
 
+import yaml
+
 from simtk import unit
 from simtk.openmm import app
 from simtk.openmm.app.internal.singleton import Singleton
-import yaml
+
+from mdtraj.utils.unit import _str_to_unit
 
 # ==========================================================================================
 # YAML utilities
 # ==========================================================================================
+
+
+def parse_quantity(string):
+    """
+    Parameters
+    ----------
+    string : str
+        A string object representing a quantity.
+
+    Returns
+    -------
+    quantity : unit.Quantity
+        The parsed quantity.
+    """
+    return _str_to_unit(string, simtk=True)
+
 
 def quantity_representer(dumper, data):
     """Converts quantity object into a yaml string."""
@@ -25,19 +44,9 @@ def quantity_representer(dumper, data):
 
 
 def quantity_constructor(loader, node):
-    """Parser for quantity objects from yaml file. Works only for float values."""
+    """Parser for quantity objects from yaml file. Works only for float and int values."""
     string = loader.construct_scalar(node)
-    split = string.replace(' ','').split('/')
-    numerator_units = split[0].split('*')
-    denominator_units = [] if len(split) == 1 else split[1].replace('(','').replace(')','').split('*')
-    v = float(numerator_units[0]) if '.' in numerator_units[0] else int(numerator_units[0])
-    u = unit.dimensionless
-    for nu in numerator_units[1:]:
-        assert hasattr(unit, nu)
-        u = u * getattr(unit, nu)
-    for du in denominator_units:
-        u = u / getattr(unit, du)
-    return unit.Quantity(v, u)
+    return parse_quantity(string)
 
 
 _OPENMM_SINGLETONS = [

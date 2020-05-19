@@ -143,7 +143,7 @@ class OpenMMSystem:
         """
         Register a system parameter.
         """
-        if hasattr(self, name):
+        if name in self._parameter_defaults:
             raise OpenMMSystemsException(f"Parameter {name} already in use.")
         self._validate_parameter_type(value)
         self._validate_parameter_type(default)
@@ -217,6 +217,7 @@ class OpenMMToolsTestSystem(OpenMMSystem):
         TestsystemClass = getattr(_openmmtools_testsystems, name)
         assert issubclass(TestsystemClass, _openmmtools_testsystems.TestSystem)
         testsystem = TestsystemClass(**kwargs)
+        self._testsytem = testsystem
         self._topology = testsystem.topology
         self._system = testsystem.system
         self._positions = testsystem.positions
@@ -230,3 +231,6 @@ class OpenMMToolsTestSystem(OpenMMSystem):
     def name(self):
         """The name of the test system."""
         return self._name
+
+    def __getattr__(self, item):
+        return getattr(self._testsytem, item)
