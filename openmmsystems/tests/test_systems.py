@@ -38,6 +38,6 @@ def test_energy_calculation(system_instance):
 # ====== specific tests =======
 # tests for specific systems
 
-@pytest.mark.parametrize("ff", [["amber10.xml", "amber10_obc.xml"]])
+@pytest.mark.parametrize("ff", [['amber99sbildn.xml', 'amber99_obc.xml']])
 def test_bpti_implicit_parameters(ff):
     bpti = ImplicitBPTI(forcefield=ff)

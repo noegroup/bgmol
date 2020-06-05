@@ -11,13 +11,75 @@ from openmmsystems.util import yaml_dump, OpenMMSystemsException
 from openmmsystems import _openmmtools_testsystems
 
 
-class OpenMMSystem:
+class BaseSystem:
     """Abstract base class for testsystems.
+
+    Attributes
+    ----------
+    name : str
+        The identifier of the system (usually the class name).
+    parameter_names : list of str
+        Names of parameters that have been registered for this system.
+    """
+    def __init__(self):
+        self._parameter_defaults = {}
+
+    @property
+    def name(self):
+        """The name of the test system."""
+        return self.__class__.__name__
+
+    def system_parameter(self, name, value, default):
+        """
+        Register a system parameter.
+        """
+        if name in self._parameter_defaults:
+            raise OpenMMSystemsException(f"Parameter {name} already in use.")
+        self._validate_parameter_type(value)
+        self._validate_parameter_type(default)
+        self._parameter_defaults[name] = default
+        setattr(self, name, value)
+        return value
+
+    @property
+    def parameter_names(self):
+        return list(self._parameter_defaults.keys())
+
+    def __str__(self):
+        stream = io.StringIO()
+        parameters = {name: getattr(self, name) for name in self._parameter_defaults}
+        yaml_dump(
+            {"system": {"identifier": self.name, "parameters": parameters}},
+            stream
+        )
+        return stream.getvalue()
+
+    @staticmethod
+    def _validate_parameter_type(value):
+        """Allow only some types for parameters."""
+        if isinstance(value, app.internal.singleton.Singleton):
+            # allow openmm.app.HBonds, ...
+            return
+        if not type(value) in [type(None), bool, str, float, int, list, dict, unit.Quantity, tuple]:
+            raise OpenMMSystemsException(
+                f"Parameter type {type(value)} is not allowed for parameter: was {type(value)} ({value})"
+            )
+        if type(value) in [list, tuple]:
+            for i, item in enumerate(value):
+                OpenMMSystem._validate_parameter_type(item)
+        if type(value) is dict:
+            for k,v in value.items():
+                OpenMMSystem._validate_parameter_type(v)
+        if type(value) is unit.Quantity and type(value._value) not in [float, int]:
+            raise OpenMMSystemsException(
+                f"Quantity value has to be of type int or float: was {type(value._value)} ({value._value})"
+            )
+
+
+class OpenMMSystem(BaseSystem):
+    """
     The implementation is based on the openmmtools.TestSystem class.
     It adds storing parameters in order to construct the testsystem from a compact yaml file.
-
-    Parameters
-    ----------
 
     Attributes
     ----------
@@ -32,12 +94,8 @@ class OpenMMSystem:
 
     def __init__(self):
         """Abstract base class for test system.
-
-        Parameters
-        ----------
-
         """
-
+        super(OpenMMSystem, self).__init__()
         # Create an empty system object.
         self._system = openmm.System()
 
@@ -49,7 +107,6 @@ class OpenMMSystem:
         # MDTraj Topology is built on demand.
         self._mdtraj_topology = None
 
-        self._parameter_defaults = {}
 
     @property
     def system(self):
@@ -66,7 +123,9 @@ class OpenMMSystem:
 
     @property
     def positions(self):
-        """The simtk.unit.Quantity object containing the particle positions, with units compatible with simtk.unit.nanometers."""
+        """particle positions
+        The simtk.unit.Quantity object containing the particle positions,
+        with units compatible with simtk.unit.nanometers."""
         return self._positions
 
     @positions.setter
@@ -130,69 +189,7 @@ class OpenMMSystem:
             state = context.getState(getPositions=True)
             del context, integrator
             state_xml = XmlSerializer.serialize(state)
-
-        return (system_xml, state_xml)
-
-    @property
-    def name(self):
-        """The name of the test system."""
-        return self.__class__.__name__
-
-    def system_parameter(self, name, value, default):
-        """
-        Register a system parameter.
-        """
-        if name in self._parameter_defaults:
-            raise OpenMMSystemsException(f"Parameter {name} already in use.")
-        self._validate_parameter_type(value)
-        self._validate_parameter_type(default)
-        self._parameter_defaults[name] = default
-        setattr(self, name, value)
-        return value
-
-    @property
-    def parameter_names(self):
-        return list(self._parameter_defaults.keys())
-
-    def __str__(self):
-        stream = io.StringIO()
-        parameters = {name: getattr(self, name) for name in self._parameter_defaults}
-        yaml_dump(
-            {"system": {"identifier": self.name, "parameters": parameters}},
-            stream
-        )
-        return stream.getvalue()
-
-    @staticmethod
-    def _validate_parameter_type(value):
-        """Allow only some types for parameters."""
-        if isinstance(value,app.internal.singleton.Singleton):
-            # allow openmm.app.HBonds, ...
-            return
-        if not type(value) in [type(None), bool, str, float, int, list, dict, unit.Quantity, tuple]:
-            raise OpenMMSystemsException(
-                f"Parameter type {type(value)} is not allowed for parameter: was {type(value)} ({value})"
-            )
-        if type(value) in [list, tuple]:
-            for i, item in enumerate(value):
-                OpenMMSystem._validate_parameter_type(item)
-        if type(value) is dict:
-            for k,v in value.items():
-                OpenMMSystem._validate_parameter_type(v)
-        if type(value) is unit.Quantity and type(value._value) not in [float, int]:
-            raise OpenMMSystemsException(
-                f"Quantity value has to be of type int or float: was {type(value._value)} ({value._value})"
-            )
-
-
-class XMLOpenMMSystem(OpenMMSystem):
-    """System parsed from a directory (xml files)."""
-    def __init__(self):
-        raise NotImplementedError
-
-    @staticmethod
-    def from_context(context, name, author=None):
-        raise NotImplementedError
+        return system_xml, state_xml
 
 
 class OpenMMToolsTestSystem(OpenMMSystem):

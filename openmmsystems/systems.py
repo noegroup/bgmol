@@ -10,14 +10,14 @@ from openmmsystems.util import get_data_file
 
 class ImplicitBPTI(OpenMMSystem):
     """Aprotinin in implicit solvent."""
-    def __init__(self, forcefield=['amber99sbildn.xml', 'amber99_obc.xml']):
+    def __init__(self, forcefield=['amber10.xml', 'amber10_obc.xml']):
 
         # call parent constructor
         super(ImplicitBPTI, self).__init__()
 
         # register parameters
         self.forcefield = self.system_parameter(
-            "forcefield", forcefield, default=['amber99sbildn.xml', 'amber99_obc.xml']
+            "forcefield", forcefield, default=['amber10.xml', 'amber10_obc.xml']
         )
 
         # create system, positions, and topology
