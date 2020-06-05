@@ -36,7 +36,10 @@ except ImportError:
 
 needs_units = pytest.mark.skipif(not HAVE_UNITS, reason='requires simtk.units')
 
+
 fd, temp = tempfile.mkstemp(suffix='.h5')
+
+
 def teardown_module(module):
     """remove the temporary file created by tests in this file
     this gets automatically called by pytest"""
@@ -110,6 +113,7 @@ def test_write_units():
         assert eq(f.root.velocities[:], velocities.value_in_unit(units.nanometers/units.picosecond))
         assert eq(str(f.root.velocities.attrs['units']), 'nanometers/picosecond')
 
+
 def test_write_units2():
     from mdtraj.utils import unit
     coordinates = unit.quantity.Quantity(np.random.randn(4, 10,3),
@@ -169,6 +173,7 @@ def test_constraints2():
     with HDF5TrajectoryFile(temp) as f:
         assert eq(f.constraints, c)
 
+
 def test_read_0():
     coordinates = np.random.randn(4, 10,3)
     with HDF5TrajectoryFile(temp, 'w') as f:
@@ -185,15 +190,16 @@ def test_read_0():
 def test_read_1():
     coordinates = units.Quantity(np.random.randn(4, 10,3), units.angstroms)
     velocities = units.Quantity(np.random.randn(4, 10,3), units.angstroms/units.years)
-
+    forces = units.Quantity(np.random.randn(4, 10,3), units.kilocalorie_per_mole/units.angstroms)
 
     with HDF5TrajectoryFile(temp, 'w') as f:
-        f.write(coordinates, velocities=velocities)
+        f.write(coordinates, velocities=velocities, forces=forces)
 
     with HDF5TrajectoryFile(temp) as f:
         got = f.read()
         assert eq(got.coordinates, coordinates.value_in_unit(units.nanometers))
         assert eq(got.velocities, velocities.value_in_unit(units.nanometers/units.picoseconds))
+        assert eq(got.forces, forces.value_in_unit(units.kilojoules_per_mole/units.nanometers), decimal=5)
 
 
 def test_read_slice_0():
@@ -205,6 +211,7 @@ def test_read_slice_0():
         got = f.read(n_frames=2)
         assert eq(got.coordinates, coordinates[:2])
         assert eq(got.velocities, None)
+        assert eq(got.forces, None)
         assert eq(got.alchemicalLambda, np.array([1,2]))
 
 
@@ -216,10 +223,12 @@ def test_read_slice_1():
     with HDF5TrajectoryFile(temp) as f:
         got = f.read(n_frames=2)
         assert eq(got.coordinates, coordinates[:2])
+        assert eq(got.forces, None)
         assert eq(got.velocities, None)
 
         got = f.read(n_frames=2)
         assert eq(got.coordinates, coordinates[2:])
+        assert eq(got.forces, None)
         assert eq(got.velocities, None)
 
 
@@ -261,12 +270,14 @@ def test_vsite_elements(get_fn):
 
     trj2 = md.load(temp, top=pdb_filename)
 
+
 def test_dont_overwrite():
     with open(temp, 'w') as f:
         f.write('a')
     with pytest.raises(IOError):
         with HDF5TrajectoryFile(temp, 'w', force_overwrite=False) as f:
             f.write(np.random.randn(10,5,3))
+
 
 def test_attributes():
     constraints = np.zeros(10, dtype=[('atom1', np.int32), ('atom2', np.int32), ('distance', np.float32)])
@@ -285,6 +296,7 @@ def test_attributes():
         eq(g.randomState, 'sdf')
         eq(g.application, 'openmm')
         eq(g.constraints, constraints)
+
 
 def test_append():
     x1 = np.random.randn(10,5,3)

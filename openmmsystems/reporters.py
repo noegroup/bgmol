@@ -50,7 +50,7 @@ __all__ = ['HDF5TrajectoryFile', 'load_hdf5', 'HDF5Reporter']
 
 Frames = namedtuple('Frames', ['coordinates', 'time', 'cell_lengths', 'cell_angles',
                                'velocities', 'kineticEnergy', 'potentialEnergy',
-                               'temperature', 'alchemicalLambda'])
+                               'temperature', 'alchemicalLambda', 'forces'])
 
 ##############################################################################
 # Code
@@ -545,7 +545,7 @@ class HDF5TrajectoryFile(object):
         frames : namedtuple
             The returned namedtuple will have the fields "coordinates", "time", "cell_lengths",
             "cell_angles", "velocities", "kineticEnergy", "potentialEnergy",
-            "temperature" and "alchemicalLambda". Each of the fields in the
+            "temperature", "alchemicalLambda", and "forces". Each of the fields in the
             returned namedtuple will either be a numpy array or None, dependening
             on if that data was saved in the trajectory. All of the data shall be
             n units of "nanometers", "picoseconds", "kelvin", "degrees" and
@@ -592,16 +592,17 @@ class HDF5TrajectoryFile(object):
                 raise
 
         frames = Frames(
-            coordinates = get_field('coordinates', (frame_slice, atom_slice, slice(None)),
+            coordinates=get_field('coordinates', (frame_slice, atom_slice, slice(None)),
                                     out_units='nanometers', can_be_none=False),
-            time = get_field('time', frame_slice, out_units='picoseconds'),
-            cell_lengths = get_field('cell_lengths', (frame_slice, slice(None)), out_units='nanometers'),
-            cell_angles = get_field('cell_angles', (frame_slice, slice(None)), out_units='degrees'),
-            velocities = get_field('velocities', (frame_slice, atom_slice, slice(None)), out_units='nanometers/picosecond'),
-            kineticEnergy = get_field('kineticEnergy', frame_slice, out_units='kilojoules_per_mole'),
-            potentialEnergy = get_field('potentialEnergy', frame_slice, out_units='kilojoules_per_mole'),
-            temperature = get_field('temperature', frame_slice, out_units='kelvin'),
-            alchemicalLambda = get_field('lambda', frame_slice, out_units='dimensionless')
+            time=get_field('time', frame_slice, out_units='picoseconds'),
+            cell_lengths=get_field('cell_lengths', (frame_slice, slice(None)), out_units='nanometers'),
+            cell_angles=get_field('cell_angles', (frame_slice, slice(None)), out_units='degrees'),
+            velocities=get_field('velocities', (frame_slice, atom_slice, slice(None)), out_units='nanometers/picosecond'),
+            kineticEnergy=get_field('kineticEnergy', frame_slice, out_units='kilojoules_per_mole'),
+            potentialEnergy=get_field('potentialEnergy', frame_slice, out_units='kilojoules_per_mole'),
+            temperature=get_field('temperature', frame_slice, out_units='kelvin'),
+            alchemicalLambda=get_field('lambda', frame_slice, out_units='dimensionless'),
+            forces=get_field('forces', (frame_slice, atom_slice, slice(None)), out_units='kilojoules_per_mole/nanometers'),
         )
 
         self._frame_index += (frame_slice.stop - frame_slice.start)
@@ -609,7 +610,7 @@ class HDF5TrajectoryFile(object):
 
     def write(self, coordinates, time=None, cell_lengths=None, cell_angles=None,
                     velocities=None, kineticEnergy=None, potentialEnergy=None,
-                    temperature=None, alchemicalLambda=None):
+                    temperature=None, alchemicalLambda=None, forces=None):
         """Write one or more frames of data to the file
 
         This method saves data that is associated with one or more simulation
@@ -660,6 +661,10 @@ class HDF5TrajectoryFile(object):
         alchemicalLambda : np.ndarray, shape=(n_frames,), optional
             You may optionally specify the alchemical lambda in each frame. These
             have no units, but are generally between zero and one.
+        forces :  np.ndarray, shape=(n_frames, n_atoms, 3), optional
+            You may optionally specify the cartesian components of the forces
+            for each atom in each frame. By convention, the forces
+            should be in units of kilojoules per mole per nanometer.
         """
         _check_mode(self.mode, ('w', 'a'))
 
@@ -683,6 +688,7 @@ class HDF5TrajectoryFile(object):
         potentialEnergy = in_units_of(potentialEnergy, None, 'kilojoules_per_mole')
         temperature = in_units_of(temperature, None, 'kelvin')
         alchemicalLambda = in_units_of(alchemicalLambda, None, 'dimensionless')
+        forces = in_units_of(forces, None, 'kilojoules_per_mole/nanometers')
 
         # do typechecking and shapechecking on the arrays
         # this ensure_type method has a lot of options, but basically it lets
@@ -720,6 +726,9 @@ class HDF5TrajectoryFile(object):
         alchemicalLambda = ensure_type(alchemicalLambda, dtype=np.float32, ndim=1,
             name='alchemicalLambda', shape=(n_frames,), can_be_none=True,
             warn_on_cast=False, add_newaxis_on_deficient_ndim=True)
+        forces = ensure_type(forces, dtype=np.float32, ndim=3,
+            name='forces', shape=(n_frames, n_atoms, 3), can_be_none=True,
+            warn_on_cast=False, add_newaxis_on_deficient_ndim=True)
 
         # if this is our first call to write(), we need to create the headers
         # and the arrays in the underlying HDF5 file
@@ -733,7 +742,9 @@ class HDF5TrajectoryFile(object):
                 set_kineticEnergy=(kineticEnergy is not None),
                 set_potentialEnergy=(potentialEnergy is not None),
                 set_temperature=(temperature is not None),
-                set_alchemicalLambda=(alchemicalLambda is not None))
+                set_alchemicalLambda=(alchemicalLambda is not None),
+                set_forces=(forces is not None)
+            )
             self._needs_initialization = False
 
             # we need to check that that the entries that the user is trying
@@ -743,7 +754,7 @@ class HDF5TrajectoryFile(object):
             # try to get the nodes for all of the fields that we have
             # which are not None
             for name in ['coordinates', 'time', 'cell_angles', 'cell_lengths',
-                         'velocities', 'kineticEnergy', 'potentialEnergy', 'temperature']:
+                         'velocities', 'kineticEnergy', 'potentialEnergy', 'temperature', 'forces']:
                 contents = locals()[name]
                 if contents is not None:
                     self._get_node(where='/', name=name).append(contents)
@@ -755,7 +766,6 @@ class HDF5TrajectoryFile(object):
                         raise AssertionError()
                     except self.tables.NoSuchNodeError:
                         pass
-
 
             # lambda is different, since the name in the file is lambda
             # but the name in this python function is alchemicalLambda
@@ -788,7 +798,7 @@ class HDF5TrajectoryFile(object):
 
     def _initialize_headers(self, n_atoms, set_coordinates, set_time, set_cell,
                             set_velocities, set_kineticEnergy, set_potentialEnergy,
-                            set_temperature, set_alchemicalLambda):
+                            set_temperature, set_alchemicalLambda, set_forces):
         self._n_atoms = n_atoms
 
         self._handle.root._v_attrs.conventions = 'Pande'
@@ -845,6 +855,11 @@ class HDF5TrajectoryFile(object):
             self._create_earray(where='/', name='lambda',
                 atom=self.tables.Float32Atom(), shape=(0,))
             self._get_node('/', name='lambda').attrs['units'] = 'dimensionless'
+
+        if set_forces:
+            self._create_earray(where='/', name='forces',
+                atom=self.tables.Float32Atom(), shape=(0, self._n_atoms, 3))
+            self._handle.root.forces.attrs['units'] = 'kilojoules_per_mole/nanometers'
 
     def seek(self, offset, whence=0):
         """Move to a new file position
@@ -981,6 +996,8 @@ class HDF5Reporter(object):
         Whether to write the instantaneous temperature to the file.
     velocities : bool
         Whether to write the velocities to the file.
+    forces : bool
+        Whether to write the forces to the file.
     atomSubset : array_like, default=None
         Only write a subset of the atoms, with these (zero based) indices
         to the file. If None, *all* of the atoms will be written to disk.
@@ -1008,7 +1025,7 @@ class HDF5Reporter(object):
 
     def __init__(self, file, reportInterval, coordinates=True, time=True,
                  cell=True, potentialEnergy=True, kineticEnergy=True,
-                 temperature=True, velocities=False, atomSubset=None):
+                 temperature=True, velocities=False, forces=False, atomSubset=None):
         """Create a HDF5Reporter.
         """
         if isinstance(file, basestring):
@@ -1032,6 +1049,7 @@ class HDF5Reporter(object):
         self._kineticEnergy = bool(kineticEnergy)
         self._temperature = bool(temperature)
         self._velocities = bool(velocities)
+        self._forces = bool(forces)
         self._needEnergy = potentialEnergy or kineticEnergy or temperature
         self._atomSubset = atomSubset
         self._atomSlice = None
@@ -1101,7 +1119,7 @@ class HDF5Reporter(object):
             energies respectively.
         """
         steps = self._reportInterval - simulation.currentStep % self._reportInterval
-        return (steps, self._coordinates, self._velocities, False, self._needEnergy)
+        return (steps, self._coordinates, self._velocities, self._forces, self._needEnergy)
 
     def report(self, simulation, state):
         """Generate a report.
@@ -1142,6 +1160,8 @@ class HDF5Reporter(object):
             kwargs['temperature'] = 2*state.getKineticEnergy()/(self._dof*units.MOLAR_GAS_CONSTANT_R)
         if self._velocities:
             kwargs['velocities'] = state.getVelocities(asNumpy=True)[self._atomSlice, :]
+        if self._forces:
+            kwargs['forces'] = state.getForces(asNumpy=True)[self._atomSlice, :]
 
         self._traj_file.write(*args, **kwargs)
         # flush the file to disk. it might not be necessary to do this every
