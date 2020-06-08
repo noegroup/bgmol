@@ -10,7 +10,7 @@ from openmmsystems.util import get_data_file
 
 class ImplicitBPTI(OpenMMSystem):
     """Aprotinin in implicit solvent."""
-    def __init__(self, forcefield=['amber10.xml', 'amber10_obc.xml']):
+    def __init__(self, forcefield=['amber10.xml', 'amber10_obc.xml'], constraints=app.HBonds):
 
         # call parent constructor
         super(ImplicitBPTI, self).__init__()
@@ -18,6 +18,9 @@ class ImplicitBPTI(OpenMMSystem):
         # register parameters
         self.forcefield = self.system_parameter(
             "forcefield", forcefield, default=['amber10.xml', 'amber10_obc.xml']
+        )
+        self.constraints = self.system_parameter(
+            "constraints", constraints, default=app.HBonds
         )
 
         # create system, positions, and topology
@@ -27,7 +30,7 @@ class ImplicitBPTI(OpenMMSystem):
             pdb.topology, removeCMMotion=False,
             nonbondedMethod=app.CutoffNonPeriodic,
             nonbondedCutoff=1.0*unit.nanometer,
-            constraints=None, rigidWater=True
+            constraints=constraints, rigidWater=True
         )
         self._positions = pdb.positions
         self._topology = pdb.topology
