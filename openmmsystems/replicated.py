@@ -1,7 +1,8 @@
 
-__all__ = ["ReplicatedSystem"]
 
+import numpy as np
 
+from simtk import unit
 from simtk.openmm import (
     System,
     LocalCoordinatesSite,
@@ -15,6 +16,9 @@ from simtk.openmm import (
     CustomBondForce,
     CustomNonbondedForce,
 )
+from openmmsystems.util import OpenMMSystemsException
+
+__all__ = ["ReplicatedSystem"]
 
 
 class ReplicatedSystem:
@@ -40,7 +44,7 @@ class ReplicatedSystem:
                 system.addParticle(base_system.getParticleMass(i))
                 if system.isVirtualSite(i):
                     vs = system.getVirtualSite(i)
-                    vs_copy = self._replicate_virtual_site(vs, n_particles, j)
+                    vs_copy = ReplicatedSystem._replicate_virtual_site(vs, n_particles, j)
                     system.setVirtualSite(i + j * n_particles, vs_copy)
         # constraints
         for j in range(n_replicas):
@@ -65,7 +69,7 @@ class ReplicatedSystem:
         if isinstance(vs, LocalCoordinatesSite):
             args = []
             for i in range(vs.getNumParticles()):
-                particle_ids.append(vs.getParticle(i) + replica * n_particles)
+                args.append(vs.getParticle(i) + replica * n_particles)
             args.append(vs.getOriginWeights())
             args.append(vs.getXWeights())
             args.append(vs.getYWeights())
@@ -74,7 +78,7 @@ class ReplicatedSystem:
         elif isinstance(vs, OutOfPlaneSite):
             args = []
             for i in range(vs.getNumParticles()):
-                particle_ids.append(vs.getParticle(i) + replica * n_particles)
+                args.append(vs.getParticle(i) + replica * n_particles)
             args.append(vs.getWeight12())
             args.append(vs.getWeight13())
             args.append(vs.getWeightCross())
@@ -96,7 +100,7 @@ class ReplicatedSystem:
                 vs.getWeight(2)
             )
         else:
-            raise f"Unknown virtual site type: {type(vs)}."
+            raise OpenMMSystemsException(f"Unknown virtual site type: {type(vs)}.")
 
     @staticmethod
     def _replicate_HarmonicBondForce(force, n_particles, n_replicas, enable_energies):
@@ -113,6 +117,8 @@ class ReplicatedSystem:
                 replicated_forces.append(replicated_force)
                 replicated_force = HarmonicBondForce()
                 replicated_force.setUsesPeriodicBoundaryConditions(force.usesPeriodicBoundaryConditions())
+        if len(replicated_forces) == 0:
+            replicated_forces.append(replicated_force)
         return replicated_forces
 
     @staticmethod
@@ -134,6 +140,8 @@ class ReplicatedSystem:
                 replicated_forces.append(replicated_force)
                 replicated_force = HarmonicAngleForce()
                 replicated_force.setUsesPeriodicBoundaryConditions(force.usesPeriodicBoundaryConditions())
+        if len(replicated_forces) == 0:
+            replicated_forces.append(replicated_force)
         return replicated_forces
 
     @staticmethod
@@ -156,6 +164,8 @@ class ReplicatedSystem:
                 replicated_forces.append(replicated_force)
                 replicated_force = PeriodicTorsionForce()
                 replicated_force.setUsesPeriodicBoundaryConditions(force.usesPeriodicBoundaryConditions())
+        if len(replicated_forces) == 0:
+            replicated_forces.append(replicated_force)
         return replicated_forces
 
     @staticmethod
@@ -174,6 +184,62 @@ class ReplicatedSystem:
     @staticmethod
     def _replicate_nonbonded_as_custom_bond_force(force, n_particles, n_replicas, enable_energies):
         replicated_forces = []
-        energy_string = ""
-        replicated_force = CustomBondForce()
-        force.usesPeriodicBoundaryConditions()
+        energy_string = "qiqj * ONE_4PI_EPS0 / r + 4*epsilon*((sigma/r)^12 - (sigma/r)^6)"
+        ONE_4PI_EPS0 = 138.935456
+
+        def prep_force(force=force):
+            f = CustomBondForce(energy_string)
+            f.addGlobalParameter("ONE_4PI_EPS0", ONE_4PI_EPS0)
+            f.addPerBondParameter("qiqj")
+            f.addPerBondParameter("epsilon")
+            f.addPerBondParameter("sigma")
+            return f
+
+        replicated_force = prep_force()
+        exceptions = {}
+        for i in range(force.getNumExceptions()):
+            p1, p2, qiqj, sigma, epsilon = force.getExceptionParameters(i)
+            pair = (p1, p2) if p1 < p2 else (p2, p1)
+            exceptions[pair] = (qiqj, sigma, epsilon)
+        parameters = {}
+        for i in range(force.getNumParticles()):
+            q, sigma, epsilon = force.getParticleParameters(i)
+            parameters[i] = (q, sigma, epsilon)
+        assert force.getNumExceptionParameterOffsets() == 0
+        assert force.getNumParticleParameterOffsets() == 0
+        for j in range(n_replicas):
+            for p1 in range(force.getNumParticles()):
+                for p2 in range(p1+1, force.getNumParticles()):
+                    if (p1,p2) in exceptions:
+                        qiqj, sigma, epsilon = exceptions[(p1, p2)]
+                        if (
+                                (abs(qiqj.value_in_unit_system(unit.md_unit_system)) < 1e-10)
+                                and
+                                (abs(epsilon.value_in_unit_system(unit.md_unit_system)) < 1e-10)
+                        ):
+                            replicated_force.addBond(p1 + j*n_particles, p2 + j*n_particles, [qiqj, epsilon, sigma])
+                    else:
+                        q1, sigma1, epsilon1 = parameters[p1]
+                        q2, sigma2, epsilon2 = parameters[p2]
+                        qiqj = q1*q2
+                        sigma = 0.5 * (sigma1 + sigma2)
+                        epsilon = np.sqrt(epsilon1 * epsilon2)
+                        if (
+                                (abs(qiqj.value_in_unit_system(unit.md_unit_system)) < 1e-10)
+                                and
+                                (abs(epsilon.value_in_unit_system(unit.md_unit_system)) < 1e-10)
+                        ):
+                            replicated_force.addBond(p1 + j*n_particles, p2 + j*n_particles, [qiqj, epsilon, sigma])
+            if enable_energies:
+                replicated_force.setForceGroup(j)
+                replicated_forces.append(replicated_force)
+                replicated_force = prep_force()
+
+        if len(replicated_forces) == 0:
+            replicated_forces.append(replicated_force)
+        return replicated_forces
+
+    @staticmethod
+    def _replicate_CMMotionRemover(force, n_particles, n_replicas, enable_energies):
+        return []
+
