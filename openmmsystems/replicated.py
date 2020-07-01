@@ -187,7 +187,7 @@ class ReplicatedSystem:
         energy_string = "qiqj * ONE_4PI_EPS0 / r + 4*epsilon*((sigma/r)^12 - (sigma/r)^6)"
         ONE_4PI_EPS0 = 138.935456
 
-        def prep_force(force=force):
+        def prep_force(force=force, energy_string=energy_string):
             f = CustomBondForce(energy_string)
             f.addGlobalParameter("ONE_4PI_EPS0", ONE_4PI_EPS0)
             f.addPerBondParameter("qiqj")
@@ -213,9 +213,9 @@ class ReplicatedSystem:
                     if (p1,p2) in exceptions:
                         qiqj, sigma, epsilon = exceptions[(p1, p2)]
                         if (
-                                (abs(qiqj.value_in_unit_system(unit.md_unit_system)) < 1e-10)
-                                and
-                                (abs(epsilon.value_in_unit_system(unit.md_unit_system)) < 1e-10)
+                                (abs(qiqj.value_in_unit_system(unit.md_unit_system)) > 1e-10)
+                                or
+                                (abs(epsilon.value_in_unit_system(unit.md_unit_system)) > 1e-10)
                         ):
                             replicated_force.addBond(p1 + j*n_particles, p2 + j*n_particles, [qiqj, epsilon, sigma])
                     else:
@@ -225,9 +225,9 @@ class ReplicatedSystem:
                         sigma = 0.5 * (sigma1 + sigma2)
                         epsilon = np.sqrt(epsilon1 * epsilon2)
                         if (
-                                (abs(qiqj.value_in_unit_system(unit.md_unit_system)) < 1e-10)
-                                and
-                                (abs(epsilon.value_in_unit_system(unit.md_unit_system)) < 1e-10)
+                                (abs(qiqj.value_in_unit_system(unit.md_unit_system)) > 1e-10)
+                                or
+                                (abs(epsilon.value_in_unit_system(unit.md_unit_system)) > 1e-10)
                         ):
                             replicated_force.addBond(p1 + j*n_particles, p2 + j*n_particles, [qiqj, epsilon, sigma])
             if enable_energies:
