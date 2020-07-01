@@ -7,16 +7,22 @@ from simtk import unit
 from simtk.openmm import NonbondedForce, Context, VerletIntegrator, Platform
 
 
-def test_replicated():
-    base_system = OpenMMToolsTestSystem("AlanineDipeptideVacuum")
-    base_system.system.getForces()
+@pytest.mark.parametrize(
+    "base_system",
+     [
+         OpenMMToolsTestSystem("AlanineDipeptideVacuum"),
+         #OpenMMToolsTestSystem("AlanineDipeptideImplicit")
+     ]
+)
+@pytest.mark.parametrize("enable_energies", [True, False])
+def test_replicated(base_system, enable_energies):
 
     n_replicas = 2
     s = ReplicatedSystem(base_system.system, n_replicas)
     assert s.system.getNumConstraints() == base_system.system.getNumConstraints() * n_replicas
     assert s.system.getNumParticles() == base_system.system.getNumParticles() * n_replicas
 
-    s = ReplicatedSystem(base_system.system, n_replicas, enable_energies=False)
+    s = ReplicatedSystem(base_system.system, n_replicas, enable_energies=enable_energies)
 
     context1 = Context(base_system.system, VerletIntegrator(0.001), Platform.getPlatformByName("Reference"))
     context1.setPositions(base_system.positions)
@@ -31,3 +37,9 @@ def test_replicated():
     context3.setPositions(np.row_stack([base_system.positions, positions2]))
     ener3 = context3.getState(getEnergy=True).getPotentialEnergy().value_in_unit_system(unit.md_unit_system)
     assert ener3 == pytest.approx(ener1 + ener2)
+
+    if enable_energies:
+        ener3a = context3.getState(getEnergy=True, groups={0}).getPotentialEnergy().value_in_unit_system(unit.md_unit_system)
+        ener3b = context3.getState(getEnergy=True, groups={1}).getPotentialEnergy().value_in_unit_system(unit.md_unit_system)
+        assert ener3a == pytest.approx(ener1)
+        assert ener3b == pytest.approx(ener2)

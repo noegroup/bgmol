@@ -243,3 +243,7 @@ class ReplicatedSystem:
     def _replicate_CMMotionRemover(force, n_particles, n_replicas, enable_energies):
         return []
 
+    @staticmethod
+    def _replicate_CustomGBForce(force, n_particles, n_replicas, enable_energies):
+        raise NotImplementedError()
+
