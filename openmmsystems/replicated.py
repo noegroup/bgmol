@@ -1,4 +1,6 @@
-
+"""
+Systems for batch evaluation.
+"""
 
 import numpy as np
 
@@ -14,8 +16,10 @@ from simtk.openmm import (
     PeriodicTorsionForce,
     NonbondedForce,
     CustomBondForce,
-    CustomNonbondedForce,
 )
+
+from simtk.openmm.app import Topology
+
 from openmmsystems.util import OpenMMSystemsException
 
 __all__ = ["ReplicatedSystem"]
@@ -23,19 +27,72 @@ __all__ = ["ReplicatedSystem"]
 
 class ReplicatedSystem:
     """
+    Encapsules an openmm.System that contains multiple replicas of one system to enable batch computations.
+    This class mimics the OpenMMSystem API. The implementation only works for specific forces, since
+    forces of the replicated system have to be tailored so that the replicas are independent.
+
+    Attributes
+    ----------
+    base_system : OpenMMSystem
+        The base system that should be replicas.
+    n_replicas : int
+        Number of replicas to be stored in the replicated system.
+    enable_energies : bool
+        Whether to enable energy evaluations in batch. This option slows down the computation,
+        since force objects have to be assigned to single replicas. This method enables energy
+        evaluations via force groups (one force group per replica) but slows down force computations
+        and propagation considerably. It also limits the maximal number of replicas to 32 (the max
+        number of force groups OpenMM allows in one system). Therefore, `enable_energies=True` is not recommended.
+
+    Notes
+    -----
+    Most methods in this class are static in order to enable conversion of single openmm objects (such as
+    System, Topology, ...) as well as OpenMMSystem instances.
+
+    Examples
+    --------
+    Replicate an openmm.System:
+    >>> from openmmtools.testsystems import AlanineDipeptideImplicit
+    >>> system = AlanineDipeptideImplicit().system
+    >>> system_10batches = ReplicatedSystem.replicate_system(system, n_replicas=10, enable_energies=False)
+
+    Replicate an openmmsystems.OpenMMSystem:
+    >>> from openmmsystems import OpenMMToolsTestSystem
+    >>> s = OpenMMToolsTestSystem("AlanineDipeptideImplicit")
+    >>> s_10batches = ReplicatedSystem(s, n_replicas=10, enable_energies=False)
+    >>> print(s_10batches.system, s_10batches.topology, s_10batches.positions)
     """
 
     def __init__(self, base_system, n_replicas, enable_energies=False):
+        assert n_replicas > 0
         self._base_system = base_system
         self._n_replicas = n_replicas
-        self._system = self._replicate_system(base_system, n_replicas, enable_energies)
+        self._system = self.replicate_system(base_system, n_replicas, enable_energies)
+        # TODO: replicate topology, positions
+        # TODO: define base system interface (name etc.)
 
     @property
     def system(self):
         return self._system
 
     @staticmethod
-    def _replicate_system(base_system, n_replicas, enable_energies):
+    def replicate_positions(positions):
+        """Replicate particle positions."""
+        # TODO
+        if type(positions) is list:
+            pass
+        else:
+            pass
+
+    @staticmethod
+    def replicate_topology(base_topology: Topology, n_replicas: int):
+        """Replicate an OpenMM Topology."""
+        topology = Topology()
+        # TODO
+
+    @staticmethod
+    def replicate_system(base_system: System, n_replicas: int, enable_energies: bool):
+        """Replicate an OpenMM System."""
         system = System()
         n_particles = base_system.getNumParticles()
         # particles
