@@ -68,14 +68,17 @@ class ReplicatedSystem(BaseSystem):
     def __init__(self, base_system: BaseSystem, n_replicas: int, enable_energies: bool=False):
         super(ReplicatedSystem, self).__init__()
         assert n_replicas > 0
+        self._base_system = base_system
+        # replicate
         self._system = self.replicate_system(base_system.system, n_replicas, enable_energies)
         self._topology = self.replicate_topology(base_system.topology, n_replicas)
         self._positions = self.replicate_positions(base_system.positions)
-        self._parameter_defaults = copy.deepcopy(base_system._parameter_defaults)
-        self._base_system = base_system
+        # set system parameters
+        for parameter, default in self._parameter_defaults.items():
+            self.system_parameter(parameter, getattr(base_system, parameter), default)
         self.base_system_name = self.system_parameter("base_system_name", base_system.name, "")
-        self.n_replicas = self.system_parameter("n_replicas", n_replicas, -1)
-        self.enable_energies = self.system_parameter("enable_energies", enable_energies, False)
+        self.n_replicas = self.system_parameter("n_replicas", n_replicas, None)
+        self.enable_energies = self.system_parameter("enable_energies", enable_energies, None)
 
     @property
     def system(self):

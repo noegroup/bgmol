@@ -5,7 +5,7 @@ from openmmsystems.api import get_system_by_yaml
 import pytest
 import numpy as np
 from simtk import unit
-from simtk.openmm import Context, VerletIntegrator, Platform
+from simtk.openmm import Context, VerletIntegrator, Platform, app
 
 
 @pytest.mark.parametrize(
@@ -47,7 +47,7 @@ def test_replicated(base_system, enable_energies):
 
 
 def test_load_replicated():
-    ala2 = OpenMMToolsTestSystem("AlanineDipeptideVacuum")
+    ala2 = OpenMMToolsTestSystem("AlanineDipeptideVacuum", constraints=app.HBonds)
     n_replicas = 2
     s = ReplicatedSystem(ala2, n_replicas)
     s2 = get_system_by_yaml(str(s))
