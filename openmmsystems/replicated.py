@@ -2,6 +2,7 @@
 Systems for batch evaluation.
 """
 
+import copy
 import numpy as np
 
 from simtk import unit
@@ -21,11 +22,12 @@ from simtk.openmm import (
 from simtk.openmm.app import Topology
 
 from openmmsystems.util import OpenMMSystemsException
+from openmmsystems.base import BaseSystem
 
 __all__ = ["ReplicatedSystem"]
 
 
-class ReplicatedSystem:
+class ReplicatedSystem(BaseSystem):
     """
     Encapsules an openmm.System that contains multiple replicas of one system to enable batch computations.
     This class mimics the OpenMMSystem API. The implementation only works for specific forces, since
@@ -63,13 +65,17 @@ class ReplicatedSystem:
     >>> print(s_10batches.system, s_10batches.topology, s_10batches.positions)
     """
 
-    def __init__(self, base_system, n_replicas, enable_energies=False):
+    def __init__(self, base_system: BaseSystem, n_replicas: int, enable_energies: bool=False):
+        super(ReplicatedSystem, self).__init__()
         assert n_replicas > 0
+        self._system = self.replicate_system(base_system.system, n_replicas, enable_energies)
+        self._topology = self.replicate_topology(base_system.topology, n_replicas)
+        self._positions = self.replicate_positions(base_system.positions)
+        self._parameter_defaults = copy.deepcopy(base_system._parameter_defaults)
         self._base_system = base_system
-        self._n_replicas = n_replicas
-        self._system = self.replicate_system(base_system, n_replicas, enable_energies)
-        # TODO: replicate topology, positions
-        # TODO: define base system interface (name etc.)
+        self.base_system_name = self.system_parameter("base_system_name", base_system.name, "")
+        self.n_replicas = self.system_parameter("n_replicas", n_replicas, -1)
+        self.enable_energies = self.system_parameter("enable_energies", enable_energies, False)
 
     @property
     def system(self):
@@ -83,12 +89,14 @@ class ReplicatedSystem:
             pass
         else:
             pass
+        return NotImplemented
 
     @staticmethod
     def replicate_topology(base_topology: Topology, n_replicas: int):
         """Replicate an OpenMM Topology."""
         topology = Topology()
         # TODO
+        return NotImplemented
 
     @staticmethod
     def replicate_system(base_system: System, n_replicas: int, enable_energies: bool):

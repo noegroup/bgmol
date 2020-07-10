@@ -1,10 +1,11 @@
 from openmmsystems.base import OpenMMToolsTestSystem
 from openmmsystems.replicated import ReplicatedSystem
+from openmmsystems.api import get_system_by_yaml
 
 import pytest
 import numpy as np
 from simtk import unit
-from simtk.openmm import NonbondedForce, Context, VerletIntegrator, Platform
+from simtk.openmm import Context, VerletIntegrator, Platform
 
 
 @pytest.mark.parametrize(
@@ -18,11 +19,11 @@ from simtk.openmm import NonbondedForce, Context, VerletIntegrator, Platform
 def test_replicated(base_system, enable_energies):
 
     n_replicas = 2
-    s = ReplicatedSystem(base_system.system, n_replicas)
+    s = ReplicatedSystem(base_system, n_replicas)
     assert s.system.getNumConstraints() == base_system.system.getNumConstraints() * n_replicas
     assert s.system.getNumParticles() == base_system.system.getNumParticles() * n_replicas
 
-    s = ReplicatedSystem(base_system.system, n_replicas, enable_energies=enable_energies)
+    s = ReplicatedSystem(base_system, n_replicas, enable_energies=enable_energies)
 
     context1 = Context(base_system.system, VerletIntegrator(0.001), Platform.getPlatformByName("Reference"))
     context1.setPositions(base_system.positions)
@@ -43,3 +44,12 @@ def test_replicated(base_system, enable_energies):
         ener3b = context3.getState(getEnergy=True, groups={1}).getPotentialEnergy().value_in_unit_system(unit.md_unit_system)
         assert ener3a == pytest.approx(ener1)
         assert ener3b == pytest.approx(ener2)
+
+
+def test_load_replicated():
+    ala2 = OpenMMToolsTestSystem("AlanineDipeptideVacuum")
+    n_replicas = 2
+    s = ReplicatedSystem(ala2, n_replicas)
+    s2 = get_system_by_yaml(str(s))
+    assert isinstance(s2._base_system, OpenMMToolsTestSystem)
+    assert (str(s) == str(s2))
