@@ -112,10 +112,3 @@ def get_data_file(relative_path):
         raise ValueError("Sorry! %s does not exist. If you just added it, you'll have to re-install" % fn)
 
     return fn
-
-
-def get_samples_file(name):
-    return resource_filename(
-        'openmmsystems',
-        os.path.normpath(os.path.join("datasets", name + ".yaml"))
-    )
