@@ -1,9 +1,9 @@
 
 import os
-from openmmsystems.api import get_system_by_name, get_system_by_yaml
-from openmmsystems.download import download_and_extract_archive
-from openmmsystems.util import yaml_load, get_samples_file
-from openmmsystems.reporters import HDF5TrajectoryFile
+import mdtraj as md
+from openmmsystems.tpl.download import download_and_extract_archive
+
+__all__ = ["DataSet"]
 
 
 class DataSet:
@@ -65,6 +65,9 @@ class DataSet:
     @property
     def system(self):
         return self._system
+
+    def as_mdtraj(self):
+        md.Trajectory(xyz=self.coordinates, topology=self.system.mdtraj_trajectory)
 
     def __len__(self):
         return self.num_frames

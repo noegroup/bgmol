@@ -1,7 +1,7 @@
 import os
-from openmmsystems.dataset import DataSet
-from openmmsystems.api import get_system_by_name
-from openmmsystems.reporters import HDF5TrajectoryFile
+from openmmsystems.datasets.base import DataSet
+from openmmsystems.api import system_by_name
+from openmmsystems.tpl.hdf5 import HDF5TrajectoryFile
 
 __all__ = ["Ala2Implicit300"]
 
@@ -22,7 +22,7 @@ class Ala2Implicit300(DataSet):
 
     def __init__(self, root=os.getcwd(), download: bool = False, read: bool = False):
         super(Ala2Implicit300, self).__init__(root=root, download=download, read=read)
-        self._system = get_system_by_name("AlanineDipeptideImplicit")
+        self._system = system_by_name("AlanineDipeptideImplicit")
 
     @property
     def trajectory_file(self):

@@ -1,5 +1,5 @@
 
-from openmmsystems.samples import Ala2Implicit300
+from openmmsystems.datasets import Ala2Implicit300
 
 
 def test_ala2_300(tmpdir):

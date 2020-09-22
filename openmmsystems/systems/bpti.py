@@ -1,14 +1,10 @@
-"""
-Implementations of OpenMMSystems.
-"""
-
 from simtk import unit
 from simtk.openmm import app
-from openmmsystems.base import OpenMMSystem, OpenMMToolsTestSystem
+from openmmsystems.systems.base import OpenMMSystem
 from openmmsystems.util import get_data_file
 
 
-__all__ = ["ImplicitBPTI", "AlanineDipeptideImplicit"]
+__all__ = ["ImplicitBPTI"]
 
 
 class ImplicitBPTI(OpenMMSystem):
@@ -27,7 +23,7 @@ class ImplicitBPTI(OpenMMSystem):
         )
 
         # create system, positions, and topology
-        pdb = app.PDBFile(get_data_file('data/bpti_top.pdb'))
+        pdb = app.PDBFile(get_data_file('../data/bpti_top.pdb'))
         forcefield = app.ForceField(*forcefield)
         self._system = forcefield.createSystem(
             pdb.topology, removeCMMotion=False,
@@ -38,9 +34,3 @@ class ImplicitBPTI(OpenMMSystem):
         self._positions = pdb.positions
         self._topology = pdb.topology
 
-
-class AlanineDipeptideImplicit(OpenMMToolsTestSystem):
-    def __init__(self, constraints=app.HBonds, hydrogenMass=None):
-        super(AlanineDipeptideImplicit, self).__init__("AlanineDipeptideImplicit")
-        self.constraints = self.system_parameter("constraints", constraints, default=app.HBonds)
-        self.hydrogenMass = self.system_parameter("hydrogenMass", hydrogenMass, default=None)

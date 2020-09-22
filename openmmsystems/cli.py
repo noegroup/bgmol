@@ -8,7 +8,7 @@ Handles the primary functions
 import os
 
 import click
-from openmmsystems.api import get_openmmsystems_names, get_openmmtools_system_names, get_toysystem_names
+from openmmsystems.api import list_openmmsystems, list_openmmtools_systems, list_toysystems
 
 
 @click.group()
@@ -22,15 +22,15 @@ def systems():
     """Print a list of all available systems"""
     print("\n- ".join(
         ["Toy Systems\n-------------"] +
-        get_toysystem_names()
+        list_toysystems()
     ))
     print("\n- ".join(
         ["\n\nOpenMMSystems\n-------------"] +
-        get_openmmsystems_names()
+        list_openmmsystems()
     ))
     print("\n- ".join(
         ["\n\nopenmmtools\n-------------"] +
-        get_openmmtools_system_names()
+        list_openmmtools_systems()
     ))
 
 

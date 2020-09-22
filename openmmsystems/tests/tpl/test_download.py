@@ -1,6 +1,6 @@
 
 import os
-from openmmsystems.download import download_url, download_and_extract_archive
+from openmmsystems.tpl.download import download_url, download_and_extract_archive
 
 
 def test_download(tmpdir):

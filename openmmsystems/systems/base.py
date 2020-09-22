@@ -8,7 +8,7 @@ from simtk.openmm import app
 import numpy as np
 
 from openmmsystems.util import yaml_dump, OpenMMSystemsException
-from openmmsystems import _openmmtools_testsystems
+from openmmsystems.tpl import _openmmtools_testsystems
 
 __all__ = ["BaseSystem", "OpenMMSystem", "OpenMMToolsTestSystem"]
 

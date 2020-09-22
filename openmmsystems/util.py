@@ -117,5 +117,5 @@ def get_data_file(relative_path):
 def get_samples_file(name):
     return resource_filename(
         'openmmsystems',
-        os.path.normpath(os.path.join("samples", name + ".yaml"))
+        os.path.normpath(os.path.join("datasets", name + ".yaml"))
     )
