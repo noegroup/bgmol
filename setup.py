@@ -62,3 +62,6 @@ setup(
     # zip_safe=False,
 
 )
+
+# requirements:
+# - tqdm
