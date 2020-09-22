@@ -157,11 +157,11 @@ info:
     size: (approximate) size of the data [specify number in KB, MB, GB]
     openmmsystems_version: (optional) Which version of openmmsystems was used?
     openmm_version: Which version of openmm was used for sampling?
+    selection: A DSL selection string for the atoms for which coordinates and forces are saved in the trajectory.
 
 location:
-    server: A server or hostname from which the data is accessible.
-    protocol: Protocol (ftp or scp)
-    root_directory: (optional) The root directory for the data files
+    url: A server or hostname from which the data is accessible.
+    md5: MD5 checksum of the data archive
 
 datafiles:  
     # The data files (in format .npy or any mdtraj-readable format)

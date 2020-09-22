@@ -21,7 +21,13 @@ def get_system_by_yaml(stream):
     """Create an OpenMMSystem object from its yaml definition in an input stream."""
     system_dict = yaml_load(stream)
     assert "system" in system_dict
-    return get_system_by_name(name=system_dict["system"]["identifier"], **system_dict["system"]["parameters"])
+    if "parameters" in system_dict["system"]:
+        parameters = system_dict["system"]["parameters"]
+        if parameters is None:
+            parameters = {}
+    else:
+        parameters = {}
+    return get_system_by_name(name=system_dict["system"]["identifier"], **parameters)
 
 
 def get_system_names():

@@ -10,6 +10,8 @@ import numpy as np
 from openmmsystems.util import yaml_dump, OpenMMSystemsException
 from openmmsystems import _openmmtools_testsystems
 
+__all__ = ["BaseSystem", "OpenMMSystem", "OpenMMToolsTestSystem"]
+
 
 class BaseSystem:
     """Abstract base class for testsystems.
