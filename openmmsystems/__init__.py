@@ -13,7 +13,8 @@ DATAPATH = os.path.join(os.path.dirname(os.path.normpath(__file__)), "data")
 
 # Add imports here
 from .api import *
-
+from . import datasets
+from . import systems
 
 # Handle versioneer
 from ._version import get_versions
