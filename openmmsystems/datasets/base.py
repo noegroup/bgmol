@@ -52,7 +52,7 @@ class DataSet:
 
     @property
     def dim(self):
-        return np.prod(self.xyz[0].shape())
+        return np.prod(self.xyz[0].shape)
 
     @property
     def xyz(self):
