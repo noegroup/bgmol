@@ -12,9 +12,9 @@ class Ala2Implicit300(DataSet):
     output spaced in 10 ps intervals.
     """
     url = "ftp://ftp.mi.fu-berlin.de/pub/cmb-data/openmmsystems/Ala2Implicit300.tgz"
-    md5 = "b85d1a2fdd76e2c9b47404855cf27c79"
+    md5 = "ce9d6f6aa214f3eb773d52255aeaeacb"
     num_frames = 99999
-    size = "46MB"
+    size = 49692000 # in bytes
     selection = "all"
     openmm_version = "7.4.1"
     date = "2020/09/18"
@@ -26,7 +26,7 @@ class Ala2Implicit300(DataSet):
 
     @property
     def trajectory_file(self):
-        return os.path.join(self.root, "300K/traj0.h5")
+        return os.path.join(self.root, "Ala2Implicit300/traj0.h5")
 
     def read(self, n_frames=None, stride=None, atom_indices=None):
         self.trajectory = load_hdf5(self.trajectory_file)
