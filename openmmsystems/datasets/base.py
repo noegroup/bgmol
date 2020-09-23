@@ -95,7 +95,6 @@ class DataSet:
     def __len__(self):
         return self.num_frames
 
-    @property
     def energy_model(self, **kwargs):
         self.system.reinitialize_energy_model(temperature=self.temperature, **kwargs)
         return self.system.energy_model
