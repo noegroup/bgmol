@@ -28,6 +28,7 @@ class DataSet:
         self._coordinates = None
         self._energies = None
         self._forces = None
+        self._temperature = None
         if read:
             self.read()
 

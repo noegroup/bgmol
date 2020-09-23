@@ -17,12 +17,12 @@ class Ala2Implicit300(DataSet):
     size = "46MB"
     selection = "all"
     openmm_version = "7.4.1"
-    temperature = 300
     date = "2020/09/18"
 
     def __init__(self, root=os.getcwd(), download: bool = False, read: bool = False):
         super(Ala2Implicit300, self).__init__(root=root, download=download, read=read)
         self._system = system_by_name("AlanineDipeptideImplicit")
+        self._temperature = 300
 
     @property
     def trajectory_file(self):
