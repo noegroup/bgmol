@@ -1,7 +1,7 @@
 import os
 from openmmsystems.datasets.base import DataSet
 from openmmsystems.api import system_by_name
-from openmmsystems.tpl.hdf5 import HDF5TrajectoryFile
+from openmmsystems.tpl.hdf5 import HDF5TrajectoryFile, load_hdf5
 
 __all__ = ["Ala2Implicit300"]
 
@@ -29,9 +29,9 @@ class Ala2Implicit300(DataSet):
         return os.path.join(self.root, "300K/traj0.h5")
 
     def read(self, n_frames=None, stride=None, atom_indices=None):
+        self.trajectory = load_hdf5(self.trajectory_file)
         f = HDF5TrajectoryFile(self.trajectory_file)
         frames = f.read(n_frames=n_frames, stride=stride, atom_indices=atom_indices)
-        self._coordinates = frames.coordinates
         self._energies = frames.potentialEnergy
         self._forces = frames.forces
         f.close()

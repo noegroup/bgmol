@@ -25,10 +25,12 @@ class DataSet:
 
         # read info
         self._system = None
-        self._coordinates = None
+        self._xyz = None
         self._energies = None
         self._forces = None
         self._temperature = None
+        self._trajectory = None
+
         if read:
             self.read()
 
@@ -48,8 +50,12 @@ class DataSet:
                 ...
 
     @property
+    def xyz(self):
+        return self._xyz
+
+    @property
     def coordinates(self):
-        return self._coordinates
+        return self._xyz
 
     @property
     def energies(self):
@@ -62,6 +68,15 @@ class DataSet:
         if self._forces is None:
             raise AttributeError("This dataset contains no forces")
         return self._forces
+
+    @property
+    def trajectory(self):
+        return self._trajectory
+
+    @trajectory.setter
+    def trajectory(self, traj):
+        self._trajectory = traj
+        self._xyz = self._trajectory.xyz
 
     @property
     def system(self):
