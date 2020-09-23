@@ -87,6 +87,10 @@ class DataSet:
     def system(self):
         return self._system
 
+    @property
+    def temperature(self):
+        return self._temperature
+
     def as_mdtraj(self):
         md.Trajectory(xyz=self.coordinates, topology=self.system.mdtraj_trajectory)
 
