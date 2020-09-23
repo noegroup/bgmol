@@ -109,7 +109,6 @@ class OpenMMSystem(BaseSystem):
         # MDTraj Topology is built on demand.
         self._mdtraj_topology = None
 
-
     @property
     def system(self):
         """The simtk.openmm.System object corresponding to the test system."""

@@ -1,5 +1,6 @@
 
 import os
+import numpy as np
 import mdtraj as md
 from openmmsystems.tpl.download import download_and_extract_archive
 
@@ -48,6 +49,10 @@ class DataSet:
         for category in self._cfg["datafiles"]:
             if isinstance(self._cfg["datafiles"][category]) is str:
                 ...
+
+    @property
+    def dim(self):
+        return np.prod(self.xyz[0].shape())
 
     @property
     def xyz(self):
