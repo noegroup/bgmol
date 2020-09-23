@@ -77,6 +77,9 @@ class BaseSystem:
                 f"Quantity value has to be of type int or float: was {type(value._value)} ({value._value})"
             )
 
+    def reinitialize_energy_model(self, temperature=300, **kwargs):
+        pass
+
 
 class OpenMMSystem(BaseSystem):
     """
@@ -108,6 +111,8 @@ class OpenMMSystem(BaseSystem):
         self._topology = app.Topology()
         # MDTraj Topology is built on demand.
         self._mdtraj_topology = None
+        # BGTorch Energy bridge is built on demand.
+        self._energy_model = None
 
     @property
     def system(self):
@@ -128,6 +133,10 @@ class OpenMMSystem(BaseSystem):
         The simtk.unit.Quantity object containing the particle positions,
         with units compatible with simtk.unit.nanometers."""
         return self._positions
+
+    @property
+    def dim(self):
+        return len(self._positions)*3
 
     @positions.setter
     def positions(self, value):
@@ -192,6 +201,25 @@ class OpenMMSystem(BaseSystem):
             state_xml = XmlSerializer.serialize(state)
         return system_xml, state_xml
 
+    def reinitialize_energy_model(self, temperature=300, **kwargs):
+        """reinitialize the energy bridge"""
+        if "integrator" in kwargs:
+            integrator = kwargs["integrator"]
+        else:
+            integrator = openmm.LangevinIntegrator(temperature, 1., 0.002)
+        from bgtorch.distribution.energy.openmm import OpenMMBridge, OpenMMEnergy
+        energy_bridge = OpenMMBridge(self.system, integrator, **kwargs)
+        self._energy_model = OpenMMEnergy(self.dim, energy_bridge)
+
+    @property
+    def energy_model(self):
+        if self._energy_model is None:
+            self.reinitialize_energy_model()
+        return self._energy_model
+
+    def energy(self, xyz):
+        return self.energy_model.energy(xyz)
+
 
 class OpenMMToolsTestSystem(OpenMMSystem):
     """An openmmtools.TestSystem in disguise."""
@@ -231,3 +259,9 @@ class OpenMMToolsTestSystem(OpenMMSystem):
 
     def __getattr__(self, item):
         return getattr(self._testsystem, item)
+
+
+class TorchSystem(OpenMMSystem):
+    @property
+    def energy_model(self):
+        return self

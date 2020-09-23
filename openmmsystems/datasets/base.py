@@ -3,6 +3,7 @@ import os
 import numpy as np
 import mdtraj as md
 from openmmsystems.tpl.download import download_and_extract_archive
+from simtk.openmm import LangevinIntegrator
 
 __all__ = ["DataSet"]
 
@@ -91,11 +92,12 @@ class DataSet:
     def temperature(self):
         return self._temperature
 
-    def as_mdtraj(self):
-        md.Trajectory(xyz=self.coordinates, topology=self.system.mdtraj_trajectory)
-
     def __len__(self):
         return self.num_frames
 
+    @property
+    def energy_model(self, **kwargs):
+        self.system.reinitialize_energy_model(temperature=self.temperature, **kwargs)
+        return self.system.energy_model
 
 
