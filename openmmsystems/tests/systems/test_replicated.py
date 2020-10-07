@@ -1,6 +1,6 @@
-from openmmsystems.base import OpenMMToolsTestSystem
-from openmmsystems.replicated import ReplicatedSystem
-from openmmsystems.api import get_system_by_yaml
+from openmmsystems.systems import OpenMMToolsTestSystem
+from openmmsystems.systems.replicated import ReplicatedSystem
+from openmmsystems.api import system_by_yaml
 
 import pytest
 import numpy as np
@@ -50,6 +50,6 @@ def test_load_replicated():
     ala2 = OpenMMToolsTestSystem("AlanineDipeptideVacuum", constraints=app.HBonds)
     n_replicas = 2
     s = ReplicatedSystem(ala2, n_replicas)
-    s2 = get_system_by_yaml(str(s))
+    s2 = system_by_yaml(str(s))
     assert isinstance(s2._base_system, OpenMMToolsTestSystem)
     assert (str(s) == str(s2))
