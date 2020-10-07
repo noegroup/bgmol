@@ -2,9 +2,9 @@
 High-level API
 """
 
-from openmmsystems import systems
 from openmmsystems.tpl import _openmmtools_testsystems
-from openmmsystems.systems import base
+from openmmsystems.systems import base, replicated
+from openmmsystems import systems
 from openmmsystems.util import OpenMMSystemsException, yaml_load
 import inspect
 
@@ -15,6 +15,12 @@ def system_by_name(name, **kwargs):
         return getattr(systems, name)(**kwargs)
     elif name in list_openmmtools_systems():
         return base.OpenMMToolsTestSystem(name, **kwargs)
+    elif name == "ReplicatedSystem":
+        base_system_name = kwargs.pop("base_system_name")
+        n_replicas = kwargs.pop("n_replicas")
+        enable_energies = kwargs.pop("enable_energies")
+        base_system = system_by_name(base_system_name, **kwargs)
+        return replicated.ReplicatedSystem(base_system, n_replicas, enable_energies)
     else:
         raise OpenMMSystemsException(f"System {name} not found.")
 
