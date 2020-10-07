@@ -25,7 +25,7 @@ from simtk.openmm import (
 from simtk.openmm.app import Topology
 
 from openmmsystems.util import OpenMMSystemsException
-from openmmsystems.base import BaseSystem
+from openmmsystems.systems import BaseSystem
 
 __all__ = ["ReplicatedSystem"]
 
