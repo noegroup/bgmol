@@ -4,7 +4,7 @@ from simtk import unit
 from simtk.openmm import app
 import pytest
 
-from openmmsystems.base import OpenMMSystem, OpenMMToolsTestSystem
+from openmmsystems.systems.base import OpenMMSystem, OpenMMToolsTestSystem
 from openmmsystems.util import OpenMMSystemsException
 
 

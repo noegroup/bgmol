@@ -5,7 +5,7 @@ import numpy as np
 import tempfile
 import os
 import mdtraj as md
-from openmmsystems.reporters import HDF5TrajectoryFile
+from openmmsystems.tpl.hdf5 import HDF5TrajectoryFile
 from mdtraj.testing import eq
 import pytest
 

@@ -6,17 +6,16 @@ openmmsystems
 [![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/ProjectName/branch/master/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/ProjectName/branch/master)
 
 
-### --- THIS IS ONLY A PREVIEW --- THE REPO CONTAINS NO FUNCTIONAL CODE, YET ---
-
 A collection of OpenMM systems and data generated for those systems.
 
 This package is an extension of the `openmmtools.testsystems` module with a twofold aim:
 1) It contains a collection of OpenMM systems (with initial positions and topologies).
-2) It provides infrastructure for fetching and sharing data (positions, forces, energies, velocities)
+2) It provides infrastructure for sharing data (positions, forces, energies, velocities)
 generated for these systems.
 
+
 ### Quickstart: Install
-Make sure that you are in a Python/conda environment that has OpenMM installed.
+Make sure that you are in a conda environment that has **OpenMM** and **mdtraj** installed.
 
 Clone the code
 ```
@@ -31,8 +30,34 @@ python setup.py install
 
 
 ### Quickstart: Example
+
 ```python
-from openmmsystems import *
+from openmmsystems.datasets import Ala2Implicit300
+dataset = Ala2Implicit300(download=True, read=True)
+```
+
+The dataset contains forces, energies and coordinates
+it also holds a reference to the system that defines the potential energy function.
+```python
+openmmsystem = dataset.system
+```
+
+The system is an `OpenMMSystem` object, it provides access to the simtk.openmm.system instance,
+the topology, and a set of initial coordinates. For example, we can run an OpenMM simulation
+as follows
+```python
+from simtk.openmm.app import Simulation, LangevinIntegrator
+integrator = LangevinIntegrator(dataset.temperature, 1, 0.001)
+simulation = Simulation(openmmsystem.topology, openmmsystem.system, integrator)
+simulation.context.setPositions(openmmsystem.positions)
+simulation.step(10)
+```
+
+The dataset contains coordinates (xyz), forces, and energies.
+```python
+dataset.energies
+```
+
 
 # get data and OpenMMSystem instance
 bpti_data = get_data("bpti_implicit_mini_example")
@@ -79,7 +104,9 @@ Identifiers can be:
 
 ```python
 from simtk import unit
-get_system(
+from openmmsystems import system_by_name
+
+system_by_name(
     "HarmonicOscillator", 
     K=100.0*unit.kilocalories_per_mole / unit.angstroms**2, 
     mass=39.948*unit.amu
@@ -118,7 +145,7 @@ Samples also have unique identifiers (the name of a yaml file, as specified belo
 ```python
 bpti_data = get_data("bpti_implicit_mini_example")
 print(bpti_data.info())
-bpti_data.download()  # gets stored in $HOME/openmmsystems_data/samples
+bpti_data.download()  # gets stored in $HOME/openmmsystems_data/datasets
 bpti_data.read() # load data into memory
 bpti_data.randomize() # random permutation
 
@@ -140,60 +167,9 @@ see examples therein.
 
 ### Adding Samples to the Repository
 
-To register data for a system, add a yaml file to the openmmsystems/samples directory.
-The name of the yaml file serves as the identifier for the data set. The yaml file has the following format:
-
-```
-system:
-    identifier: System identifier (class name or directory name).
-    parameters: Keyword arguments to the system constructor.
-
-info:
-    description: A short description (which method was used for sampling).
-    temperature: Temperature at which samples were created (in Kelvin).
-    author: Who created the data?
-    date: When was the data created?
-    num_frames: Number of frames contained in the data set.
-    size: (approximate) size of the data [specify number in KB, MB, GB]
-    openmmsystems_version: (optional) Which version of openmmsystems was used?
-    openmm_version: Which version of openmm was used for sampling?
-    selection: A DSL selection string for the atoms for which coordinates and forces are saved in the trajectory.
-
-location:
-    url: A server or hostname from which the data is accessible.
-    md5: MD5 checksum of the data archive
-
-datafiles:  
-    # The data files (in format .npy or any mdtraj-readable format)
-    # The number of files must be the same (or zero) for each type of data.
-    # If a file (for example an HDF5 trajectory) contains multiple types of data, it can appear in multiple lines.
-    positions: a list of filenames containing positions (and - for trajectory files - box dimensions)
-    velocities: (optional) a list of filenames containing velocities
-    forces: (optional) a list of filenames containing forces
-    energies: (optional) a list of filenames containing energies
-
-# (optional)
-integrator: Serialized openmm integrator in XML format.
-output_interval: Spacing between trajectory frames.
-```
-
-The integrator and output interval may be used later down the road to extend data sets.
-
-To facilitate writing these yml files, a terminal command `openmmsystems register` and a python function
-`openmmsystems.register` are provided.
-
 
 ### Customization
 
-Instead of accessing samples from the openmmsystems repository, you can also keep a local data set.
-Link your local samples directory by creating a file `.openmmsystems.yaml` in your home directory and specify:
-
-```
-samples_paths:
-- local_directory_1
-- local_directory_2
-- ...
-```
 
 ### Evaluating Energies
 

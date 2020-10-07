@@ -2,28 +2,30 @@
 High-level API
 """
 
-from openmmsystems import _openmmtools_testsystems, systems, base, replicated
+from openmmsystems.tpl import _openmmtools_testsystems
+from openmmsystems.systems import base, replicated
+from openmmsystems import systems
 from openmmsystems.util import OpenMMSystemsException, yaml_load
 import inspect
 
 
-def get_system_by_name(name, **kwargs):
+def system_by_name(name, **kwargs):
     """Create an OpenMMSystem object from its name and some keyword arguments."""
-    if name in get_openmmsystems_names():
+    if name in list_openmmsystems():
         return getattr(systems, name)(**kwargs)
-    elif name in get_openmmtools_system_names():
+    elif name in list_openmmtools_systems():
         return base.OpenMMToolsTestSystem(name, **kwargs)
     elif name == "ReplicatedSystem":
         base_system_name = kwargs.pop("base_system_name")
         n_replicas = kwargs.pop("n_replicas")
         enable_energies = kwargs.pop("enable_energies")
-        base_system = get_system_by_name(base_system_name, **kwargs)
+        base_system = system_by_name(base_system_name, **kwargs)
         return replicated.ReplicatedSystem(base_system, n_replicas, enable_energies)
     else:
         raise OpenMMSystemsException(f"System {name} not found.")
 
 
-def get_system_by_yaml(stream):
+def system_by_yaml(stream):
     """Create an OpenMMSystem object from its yaml definition in an input stream."""
     system_dict = yaml_load(stream)
     assert "system" in system_dict
@@ -33,10 +35,10 @@ def get_system_by_yaml(stream):
             parameters = {}
     else:
         parameters = {}
-    return get_system_by_name(name=system_dict["system"]["identifier"], **parameters)
+    return system_by_name(name=system_dict["system"]["identifier"], **parameters)
 
 
-def get_system_names():
+def list_systems():
     """
     List names of all available systems.
 
@@ -45,14 +47,14 @@ def get_system_names():
     names (list of str):
         The names of all available systems.
     """
-    return get_toysystem_names() + get_openmmsystems_names() + get_openmmtools_system_names()
+    return list_toysystems() + list_openmmsystems() + list_openmmtools_systems()
 
 
-def get_toysystem_names():
+def list_toysystems():
     return []
 
 
-def get_openmmtools_system_names():
+def list_openmmtools_systems():
     """
     List names of openmmtools testsystems.
 
@@ -72,7 +74,7 @@ def get_openmmtools_system_names():
     return names
 
 
-def get_openmmsystems_names():
+def list_openmmsystems():
     """
     List names of testsystems in this module.
 

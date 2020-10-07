@@ -5,7 +5,7 @@ import os
 from openmmsystems import systems, api
 
 
-@pytest.fixture(scope="session", params=api.get_openmmsystems_names())
+@pytest.fixture(scope="session", params=api.list_openmmsystems())
 def system_class(request):
     """All system classes defined in openmmsystems.systems"""
     return getattr(systems, request.param)

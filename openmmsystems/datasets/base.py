@@ -1,9 +1,11 @@
 
 import os
-from openmmsystems.api import get_system_by_name, get_system_by_yaml
-from openmmsystems.download import download_and_extract_archive
-from openmmsystems.util import yaml_load, get_samples_file
-from openmmsystems.reporters import HDF5TrajectoryFile
+import numpy as np
+import mdtraj as md
+from openmmsystems.tpl.download import download_and_extract_archive
+from simtk.openmm import LangevinIntegrator
+
+__all__ = ["DataSet"]
 
 
 class DataSet:
@@ -25,9 +27,12 @@ class DataSet:
 
         # read info
         self._system = None
-        self._coordinates = None
+        self._xyz = None
         self._energies = None
         self._forces = None
+        self._temperature = None
+        self._trajectory = None
+
         if read:
             self.read()
 
@@ -47,8 +52,16 @@ class DataSet:
                 ...
 
     @property
+    def dim(self):
+        return np.prod(self.xyz[0].shape)
+
+    @property
+    def xyz(self):
+        return self._xyz
+
+    @property
     def coordinates(self):
-        return self._coordinates
+        return self._xyz
 
     @property
     def energies(self):
@@ -63,11 +76,27 @@ class DataSet:
         return self._forces
 
     @property
+    def trajectory(self):
+        return self._trajectory
+
+    @trajectory.setter
+    def trajectory(self, traj):
+        self._trajectory = traj
+        self._xyz = self._trajectory.xyz
+
+    @property
     def system(self):
         return self._system
+
+    @property
+    def temperature(self):
+        return self._temperature
 
     def __len__(self):
         return self.num_frames
 
+    def get_energy_model(self, **kwargs):
+        self.system.reinitialize_energy_model(temperature=self.temperature, **kwargs)
+        return self.system.energy_model
 
 

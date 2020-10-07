@@ -185,7 +185,7 @@ def get_data_filename(relative_path):
     """
 
     from pkg_resources import resource_filename
-    fn = resource_filename('openmmsystems._openmmtools_testsystems', relative_path)
+    fn = resource_filename('openmmsystems.tpl._openmmtools_testsystems', relative_path)
 
     if not os.path.exists(fn):
         raise ValueError("Sorry! %s does not exist. If you just added it, you'll have to re-install" % fn)
@@ -3501,7 +3501,8 @@ class AlanineDipeptideExplicit(TestSystem):
 
         TestSystem.__init__(self, **kwargs)
 
-        prmtop_filename = get_data_filename("_openmmtools_data/alanine-dipeptide-explicit/alanine-dipeptide.prmtop")
+        prmtop_filename = get_data_filename(
+            "_openmmtools_data/alanine-dipeptide-explicit/alanine-dipeptide.prmtop")
         crd_filename = get_data_filename("_openmmtools_data/alanine-dipeptide-explicit/alanine-dipeptide.crd")
 
         # Initialize system.
