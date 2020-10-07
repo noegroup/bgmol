@@ -17,6 +17,9 @@ from simtk.openmm import (
     PeriodicTorsionForce,
     NonbondedForce,
     CustomBondForce,
+    # for supporting CHARMM22*
+    CustomTorsionForce,
+    CMAPTorsionForce,
 )
 
 from simtk.openmm.app import Topology
@@ -232,6 +235,49 @@ class ReplicatedSystem(BaseSystem):
                 replicated_forces.append(replicated_force)
                 replicated_force = PeriodicTorsionForce()
                 replicated_force.setUsesPeriodicBoundaryConditions(force.usesPeriodicBoundaryConditions())
+        if len(replicated_forces) == 0:
+            replicated_forces.append(replicated_force)
+        return replicated_forces
+
+    @staticmethod
+    def _replicate_CustomTorsionForce(force, n_particles, n_replicas, enable_energies):
+        replicated_forces = []
+        replicated_force = CustomTorsionForce(force.getEnergyFunction())
+        replicated_force.setUsesPeriodicBoundaryConditions(force.usesPeriodicBoundaryConditions())
+        for i in range(force.getNumGlobalParameters()):
+            replicated_force.addGlobalParameter(force.getGlobalParameterName(i),
+                    force.getGlobalParameterDefaultValue(i))
+        for i in range(force.getNumPerTorsionParameters()):
+            replicated_force.addPerTorsionParameter(force.getPerTorsionParameterName(i))
+        for j in range(n_replicas):
+            for i in range(force.getNumTorsions()):
+                p1, p2, p3, p4, params = force.getTorsionParameters(i)
+                replicated_force.addTorsion(p1 + j * n_particles,
+                        p2 + j * n_particles,
+                        p3 + j * n_particles,
+                        p4 + j * n_particles,
+                        params)
+            if enable_energies:
+                return NotImplemented
+        if len(replicated_forces) == 0:
+            replicated_forces.append(replicated_force)
+        return replicated_forces
+
+    @staticmethod
+    def _replicate_CMAPTorsionForce(force, n_particles, n_replicas, enable_energies):
+        replicated_forces = []
+        replicated_force = CMAPTorsionForce()
+        replicated_force.setUsesPeriodicBoundaryConditions(force.usesPeriodicBoundaryConditions())
+        for i in range(force.getNumMaps()):
+            size, energy = force.getMapParameters(i)
+            replicated_force.addMap(size, energy)
+        for j in range(n_replicas):
+            for i in range(force.getNumTorsions()):
+                map_, *abs_ = force.getTorsionParameters(i)
+                new_abs = [a_or_b + j * n_particles for a_or_b in abs_]
+                replicated_force.addTorsion(map_, *new_abs)
+            if enable_energies:
+                return NotImplemented
         if len(replicated_forces) == 0:
             replicated_forces.append(replicated_force)
         return replicated_forces
