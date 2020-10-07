@@ -39,7 +39,7 @@ class MiniPeptide(OpenMMSystem):
             aminoacids="AA",
             forcefield=["amber99sbildn.xml", "tip3p.xml", "amber99_obc.xml"],
             constraints=app.HBonds,
-            solvated=True,
+            solvated=False,
             hydrogen_mass=None,
             root=tempfile.gettempdir(),
             download=True
