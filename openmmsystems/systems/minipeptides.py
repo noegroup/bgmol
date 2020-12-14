@@ -51,7 +51,7 @@ class MiniPeptide(OpenMMSystem):
             "aminoacids", aminoacids, default="AA"
         )
         self.forcefield = self.system_parameter(
-            "forcefield", forcefield, default=["amber99sbildn.xml", "tip3p.xml"]
+            "forcefield", forcefield, default=["amber99sbildn.xml", "tip3p.xml", "amber99_obc.xml"]
         )
         self.constraints = self.system_parameter(
             "constraints", constraints, default=app.HBonds
