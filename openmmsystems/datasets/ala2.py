@@ -71,8 +71,8 @@ class Ala2Implicit1000(DataSet):
 
 class Ala2TSF300(DataSet):
     """AlanineDipeptideTSF at 300 K.
-    1 ms Langevin dynamics with 1/ps friction coefficient and 2fs time step,
-    output spaced in 10 ps intervals.
+    1 microssecond Langevin dynamics with 1/ps friction coefficient and 2fs time step,
+    output spaced in 1 ps intervals. The output is concatenated from 20 different independent simulations.
     """
     url = "ftp://ftp.mi.fu-berlin.de/pub/cmb-data/openmmsystems/ala2/Ala2TSF300.tgz"
     md5 = "25f4df84fde7cfe65b0219082ebc5f59"
@@ -93,8 +93,8 @@ class Ala2TSF300(DataSet):
 
 class Ala2TSF600(DataSet):
     """AlanineDipeptideTSF at 600 K.
-    1 ms Langevin dynamics with 1/ps friction coefficient and 2fs time step,
-    output spaced in 10 ps intervals.
+    1 ns Langevin dynamics with 1/ps friction coefficient and 2fs time step,
+    output spaced in 20 fs intervals.
     """
     url = "ftp://ftp.mi.fu-berlin.de/pub/cmb-data/openmmsystems/ala2/Ala2TSF600.tgz"
     md5 = "825cb80abfa696a092d9f5020a941a6a"
@@ -115,8 +115,8 @@ class Ala2TSF600(DataSet):
 
 class Ala2TSF1000(DataSet):
     """AlanineDipeptideTSF at 1000 K.
-    1 ms Langevin dynamics with 1/ps friction coefficient and 2fs time step,
-    output spaced in 10 ps intervals.
+    200 ps Langevin dynamics with 1/ps friction coefficient and 2fs time step,
+    output spaced in 20 fs intervals.
     """
     url = "ftp://ftp.mi.fu-berlin.de/pub/cmb-data/openmmsystems/ala2/Ala2TSF1000.tgz"
     md5 = "95db3e0fee55b62c0f2dcf4b1501b6ba"

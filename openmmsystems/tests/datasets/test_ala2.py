@@ -16,5 +16,4 @@ def test_ala2_300(tmpdir):
 def test_ala2_tsf(tmpdir, Dataset):
     dataset = Dataset(root=tmpdir, download=True, read=True)
     assert dataset.coordinates.shape == (len(dataset), 22, 3)
-    print(dataset.system)
 
