@@ -29,6 +29,8 @@ class MiniPeptide(OpenMMSystem):
         If None, don't repartition hydrogen mass. Else, assign the specified mass to hydrogen atoms.
     nonbonded_cutoff : unit.Quantity
         The cutoff for nonbonded forces.
+    switch_distance : unit.Quantity or None
+        Switch distance for nonbonded (LJ) interactions. If None, don't use a switch distance.
 
     Notes
     -----
@@ -44,6 +46,7 @@ class MiniPeptide(OpenMMSystem):
             solvated=False,
             hydrogen_mass=None,
             nonbonded_cutoff=0.9*unit.nanometer,
+            switch_distance=None,
             root=tempfile.gettempdir(),
             download=True
     ):
@@ -67,6 +70,9 @@ class MiniPeptide(OpenMMSystem):
         )
         self.nonbonded_cutoff = self.system_parameter(
             "nonbonded_cutoff", nonbonded_cutoff, default=0.9*unit.nanometer
+        )
+        self.switch_distance = self.system_parameter(
+            "switch_distance", switch_distance, default=None
         )
 
         # create system
@@ -93,6 +99,7 @@ class MiniPeptide(OpenMMSystem):
             removeCMMotion=True,
             nonbondedMethod=nonbonded_method,
             nonbonded_cutoff=nonbonded_cutoff,
+            switchDistance=switch_distance,
             constraints=constraints,
             hydrogenMass=hydrogen_mass,
             rigidWater=True
