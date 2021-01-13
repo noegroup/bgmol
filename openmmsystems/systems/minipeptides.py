@@ -27,6 +27,8 @@ class MiniPeptide(OpenMMSystem):
         Whether to add explicit water
     hydrogen_mass : unit.Quantity or None
         If None, don't repartition hydrogen mass. Else, assign the specified mass to hydrogen atoms.
+    nonbonded_cutoff : unit.Quantity
+        The cutoff for nonbonded forces.
 
     Notes
     -----
@@ -41,6 +43,7 @@ class MiniPeptide(OpenMMSystem):
             constraints=app.HBonds,
             solvated=False,
             hydrogen_mass=None,
+            nonbonded_cutoff=0.9*unit.nanometer,
             root=tempfile.gettempdir(),
             download=True
     ):
@@ -61,6 +64,9 @@ class MiniPeptide(OpenMMSystem):
         )
         self.hydrogen_mass = self.system_parameter(
             "hydrogen_mass", hydrogen_mass, default=None
+        )
+        self.nonbonded_cutoff = self.system_parameter(
+            "nonbonded_cutoff", nonbonded_cutoff, default=0.9*unit.nanometer
         )
 
         # create system
@@ -86,7 +92,7 @@ class MiniPeptide(OpenMMSystem):
             pdb.topology,
             removeCMMotion=True,
             nonbondedMethod=nonbonded_method,
-            nonbonded_cutoff=0.9 * unit.nanometer,
+            nonbonded_cutoff=nonbonded_cutoff,
             constraints=constraints,
             hydrogenMass=hydrogen_mass,
             rigidWater=True
