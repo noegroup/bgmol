@@ -98,7 +98,7 @@ class MiniPeptide(OpenMMSystem):
             pdb.topology,
             removeCMMotion=True,
             nonbondedMethod=nonbonded_method,
-            nonbonded_cutoff=nonbonded_cutoff,
+            nonbondedCutoff=nonbonded_cutoff,
             switchDistance=switch_distance,
             constraints=constraints,
             hydrogenMass=hydrogen_mass,
