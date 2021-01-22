@@ -2,11 +2,16 @@
 High-level API
 """
 
-from openmmsystems.tpl import _openmmtools_testsystems
-from openmmsystems.systems import base, replicated
-from openmmsystems import systems
-from openmmsystems.util import OpenMMSystemsException, yaml_load
 import inspect
+from openmmsystems import systems
+from openmmsystems import datasets
+from openmmsystems.tpl import _openmmtools_testsystems
+from openmmsystems.systems import replicated
+from openmmsystems.util import OpenMMSystemsException, yaml_load
+
+
+__all__ = ["system_by_name", "system_by_yaml", "list_datasets", "list_openmmsystems", "list_openmmtools_systems",
+           "list_systems", "list_toysystems"]
 
 
 def system_by_name(name, **kwargs):
@@ -14,7 +19,7 @@ def system_by_name(name, **kwargs):
     if name in list_openmmsystems():
         return getattr(systems, name)(**kwargs)
     elif name in list_openmmtools_systems():
-        return base.OpenMMToolsTestSystem(name, **kwargs)
+        return systems.base.OpenMMToolsTestSystem(name, **kwargs)
     elif name == "ReplicatedSystem":
         base_system_name = kwargs.pop("base_system_name")
         n_replicas = kwargs.pop("n_replicas")
@@ -76,19 +81,39 @@ def list_openmmtools_systems():
 
 def list_openmmsystems():
     """
-    List names of testsystems in this module.
+    List names of OpenMMSystems in this package.
 
     Returns
     -------
     names (list of str):
-        The names all subclasses of openmmtools.TestSystem
+        The names all subclasses of systems.OpenMMSystem
     """
     names = []
     for key, value in systems.__dict__.items():
         if (
                 inspect.isclass(value)
                 and issubclass(value, systems.OpenMMSystem)
-                and key not in base.__dict__.keys()  # not one of the base classes
+                and key not in systems.base.__dict__.keys()  # not one of the base classes
+        ):
+            names.append(key)
+    return names
+
+
+def list_datasets():
+    """
+    List names of datasets in this package.
+
+    Returns
+    -------
+    names (list of str):
+        The names all subclasses of datasets
+    """
+    names = []
+    for key, value in datasets.__dict__.items():
+        if (
+                inspect.isclass(value)
+                and issubclass(value, datasets.DataSet)
+                and key not in datasets.base.__dict__.keys()  # not one of the base classes
         ):
             names.append(key)
     return names

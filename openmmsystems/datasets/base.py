@@ -2,7 +2,9 @@
 import os
 import numpy as np
 import mdtraj as md
+from simtk import unit
 from openmmsystems.tpl.download import download_and_extract_archive
+from openmmsystems.tpl.hdf5 import load_hdf5, HDF5TrajectoryFile
 from simtk.openmm import LangevinIntegrator
 
 __all__ = ["DataSet"]
@@ -13,10 +15,29 @@ class DataSet:
 
     Parameters
     ----------
-    name : str
     root : str
+        The root directory where the dataset is stored locally.
     download : bool
+        Whether to download the dataset.
     read : bool
+        Whether to read the dataset into memory.
+
+    Attributes
+    ----------
+    xyz : np.ndarray
+        The coordinates with shape (num_frames, num_atoms_in_selection, 3)
+    coordinates : np.ndarray
+        An alias for DataSet.xyz
+    forces: np.ndarray or None
+         The forces with shape (num_frames, num_atoms_in_selection, 3)
+    energies: np.ndarray or None
+         The potential energies with shape (num_frames)
+    trajectory: mdtraj.Trajectory
+        The trajectory.
+    temperature: float
+        Temperature in Kelvin.
+    unitcell_vectors: np.ndarray or None
+        The box vectors of the simulation cell with shape (num_frames, 3, 3).
     """
     def __init__(self, root=os.getcwd(), download: bool = False, read: bool = False):
         # download info
@@ -32,6 +53,7 @@ class DataSet:
         self._forces = None
         self._temperature = None
         self._trajectory = None
+        self._unitcell_vectors = None
 
         if read:
             self.read()
@@ -45,11 +67,11 @@ class DataSet:
             remove_finished=True
         )
 
-    def read(self, indices=None):
+    def read(self, n_frames=None, stride=None, atom_indices=None):
         files = [os.path.join(self.root, f) for f in self.datafiles]
         for category in self._cfg["datafiles"]:
             if isinstance(self._cfg["datafiles"][category]) is str:
-                ...
+                ...  # TODO
 
     @property
     def dim(self):
@@ -65,15 +87,17 @@ class DataSet:
 
     @property
     def energies(self):
-        if self._energies is None:
-            raise AttributeError("This dataset contains no energies")
         return self._energies
+        #if self._energies is None:
+        #    raise AttributeError("This dataset contains no energies")
+        #return self._energies
 
     @property
     def forces(self):
-        if self._forces is None:
-            raise AttributeError("This dataset contains no forces")
         return self._forces
+        #if self._forces is None:
+        #    raise AttributeError("This dataset contains no forces")
+        #return self._forces
 
     @property
     def trajectory(self):
@@ -83,6 +107,11 @@ class DataSet:
     def trajectory(self, traj):
         self._trajectory = traj
         self._xyz = self._trajectory.xyz
+        self._unitcell_vectors = self.trajectory.unitcell_vectors
+
+    @property
+    def unitcell_vectors(self):
+        return self._unitcell_vectors
 
     @property
     def system(self):
@@ -99,4 +128,11 @@ class DataSet:
         self.system.reinitialize_energy_model(temperature=self.temperature, **kwargs)
         return self.system.energy_model
 
+    def load_hdf5(self, n_frames=None, stride=None, atom_indices=None):
+        self.trajectory = load_hdf5(self.trajectory_file, stride=stride, atom_indices=atom_indices)
+        f = HDF5TrajectoryFile(self.trajectory_file)
+        frames = f.read(n_frames=n_frames, stride=stride, atom_indices=atom_indices)
+        self._energies = frames.potentialEnergy
+        self._forces = frames.forces
+        f.close()
 

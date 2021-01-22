@@ -19,6 +19,7 @@ class Ala2Implicit300(DataSet):
     selection = "all"
     openmm_version = "7.4.1"
     date = "2020/09/18"
+    author = "Andreas Krämer"
 
     def __init__(self, root=os.getcwd(), download: bool = False, read: bool = False):
         super(Ala2Implicit300, self).__init__(root=root, download=download, read=read)
@@ -50,6 +51,7 @@ class Ala2Implicit1000(DataSet):
     selection = "all"
     openmm_version = "7.4.1"
     date = "2020/09/29"
+    author = "Andreas Krämer"
 
     def __init__(self, root=os.getcwd(), download: bool = False, read: bool = False):
         super(Ala2Implicit1000, self).__init__(root=root, download=download, read=read)
@@ -81,6 +83,7 @@ class Ala2TSF300(DataSet):
     selection = "all"
     openmm_version = "7.4.1"
     date = "2020/12/14"
+    author = "Manuel Dibak"
 
     def __init__(self, root=os.getcwd(), download: bool = False, read: bool = False):
         super(Ala2TSF300, self).__init__(root=root, download=download, read=read)
@@ -103,6 +106,7 @@ class Ala2TSF600(DataSet):
     selection = "all"
     openmm_version = "7.4.1"
     date = "2020/12/14"
+    author = "Manuel Dibak"
 
     def __init__(self, root=os.getcwd(), download: bool = False, read: bool = False):
         super(Ala2TSF600, self).__init__(root=root, download=download, read=read)
@@ -125,6 +129,7 @@ class Ala2TSF1000(DataSet):
     selection = "all"
     openmm_version = "7.4.1"
     date = "2020/12/14"
+    author = "Manuel Dibak"
 
     def __init__(self, root=os.getcwd(), download: bool = False, read: bool = False):
         super(Ala2TSF1000, self).__init__(root=root, download=download, read=read)

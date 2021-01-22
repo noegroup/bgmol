@@ -1,14 +1,17 @@
 
 import os
+import numpy as np
 
 from simtk import unit
+from simtk.openmm.app import HBonds
+from simtk.openmm import LangevinIntegrator, Platform
 
 from .base import DataSet
 from ..systems.minipeptides import MiniPeptide
 from ..tpl.hdf5 import load_hdf5, HDF5TrajectoryFile
 
 
-__all__ = ["ASolvatedAmoeba", "ASolvatedAmber14"]
+__all__ = ["ASolvatedAmoeba", "ASolvatedAmber14", "ASolvatedAmber99"]
 
 
 class ASolvatedAmoeba(DataSet):
@@ -24,6 +27,7 @@ class ASolvatedAmoeba(DataSet):
     selection = "all"
     openmm_version = "7.5.0"
     date = "2021/01/15"
+    author = "Andreas Krämer"
 
     @property
     def trajectory_file(self):
@@ -62,6 +66,7 @@ class ASolvatedAmber14(DataSet):
     selection = "all"
     openmm_version = "7.5.0"
     date = "2021/01/15"
+    author = "Andreas Krämer"
 
     @property
     def trajectory_file(self):
@@ -85,3 +90,51 @@ class ASolvatedAmber14(DataSet):
         self._energies = frames.potentialEnergy
         self._forces = frames.forces
         f.close()
+
+
+class ASolvatedAmber99(DataSet):
+    """Capped alanine in explicit water with Amber99 and TIP3P.
+    2 microsecond samples spaced in 2 ps intervals.
+    The dataset contains protein all-atom positions, protein all-atom forces, and energies as well as
+    specific forces and energies from the solvent environment.
+    """
+    url = "ftp://ftp.mi.fu-berlin.de/pub/cmb-data/openmmsystems/minipeptides/ASolvatedAmber99.tgz"
+    md5 = "94b4a5221014ddfb03fb62cc5c7d67df"
+    num_frames = 1000000
+    size = 749056  # in bytes
+    selection = "protein"
+    openmm_version = "7.4.1"
+    date = "2020/05/30"
+    author = "Yaoyi Chen"
+
+    def __init__(self, root=os.getcwd(), download: bool = False, read: bool = False):
+        super(ASolvatedAmber99, self).__init__(root=root, download=download, read=read)
+        self._system = MiniPeptide(
+            aminoacids="A",
+            solvated=True,
+            forcefield=["amber99sbildn.xml", "tip3p.xml"],
+            nonbonded_cutoff=0.9 * unit.nanometer,
+            constraints=HBonds,
+            hydrogen_mass=4 * unit.amu
+        )
+        self._temperature = 300.
+
+    def read(self, n_frames=None, stride=None, atom_indices=None):
+        npz = np.load(os.path.join(self.root, "ASolvatedAmber99/spep_0000_dataset.npz"))
+        self._xyz = npz["coords"]
+        self._forces = npz["Fs"]
+        self._energies = npz["Es"]
+        self.solvation_forces = npz["solvFs"]
+        self.solvation_energies = npz["solvEs"]
+
+    @property
+    def integrator(self):
+        integrator = LangevinIntegrator(300 * unit.kelvin, 1 / unit.picosecond, 0.004 * unit.picoseconds)
+        integrator.setConstraintTolerance(1e-5)
+        return integrator
+
+    @property
+    def platform(self):
+        platform = Platform.getPlatformByName("CUDA")
+        platform.setPropertyDefaultValue("Precision", "mixed")
+        return platform

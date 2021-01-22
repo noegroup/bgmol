@@ -168,6 +168,10 @@ class OpenMMSystem(BaseSystem):
             self._mdtraj_topology = md.Topology.from_openmm(self._topology)
         return self._mdtraj_topology
 
+    def select(self, selection):
+        """Return atom indices based on selection string."""
+        return self.mdtraj_topology.select(selection)
+
     def serialize(self):
         """Return the System and positions in serialized XML form.
 

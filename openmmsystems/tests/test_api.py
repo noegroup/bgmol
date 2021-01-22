@@ -5,7 +5,7 @@ import io
 from openmmtools.utils import is_quantity_close
 
 from openmmsystems.api import (
-    list_openmmtools_systems, list_openmmsystems, system_by_name, system_by_yaml
+    list_openmmtools_systems, list_openmmsystems, system_by_name, system_by_yaml, list_datasets
 )
 
 from openmmsystems.systems.base import OpenMMToolsTestSystem
@@ -21,9 +21,12 @@ def test_get_openmmtools_system_names():
 
 
 def test_get_openmmsystems_names():
-    """Check the number of testsystems in the openmmtools package."""
+    """Check the number of testsystems"""
     assert len(list_openmmsystems()) > 0
-    # just to be made aware when testsystems are added or removed
+
+
+def test_get_dataset_names():
+    assert len(list_datasets()) > 0
 
 
 def test_get_system_by_name_or_yaml():
