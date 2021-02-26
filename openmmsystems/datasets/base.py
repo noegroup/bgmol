@@ -2,7 +2,7 @@
 import os
 import numpy as np
 import mdtraj as md
-from simtk import unit
+from mdtraj.utils import box_vectors_to_lengths_and_angles
 from openmmsystems.tpl.download import download_and_extract_archive
 from openmmsystems.tpl.hdf5 import load_hdf5, HDF5TrajectoryFile
 from simtk.openmm import LangevinIntegrator
@@ -101,6 +101,15 @@ class DataSet:
 
     @property
     def trajectory(self):
+        if self._trajectory is None:
+            trajectory = md.Trajectory(
+                xyz=self.xyz,
+                topology=self.system.topology
+            )
+            if self.unitcell_vectors is not None:
+                trajectory.unitcell_vectors = self.unitcell_vectors
+            # TODO: set time when possible
+            self._trajectory = trajectory
         return self._trajectory
 
     @trajectory.setter
