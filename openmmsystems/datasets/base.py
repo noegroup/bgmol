@@ -104,7 +104,7 @@ class DataSet:
         if self._trajectory is None:
             trajectory = md.Trajectory(
                 xyz=self.xyz,
-                topology=self.system.topology
+                topology=self.system.mdtraj_topology
             )
             if self.unitcell_vectors is not None:
                 trajectory.unitcell_vectors = self.unitcell_vectors
