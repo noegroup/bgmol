@@ -3,11 +3,12 @@ import os
 import warnings
 
 import numpy as np
+import mdtraj as md
 import yaml
 from .util import get_data_file
 
 
-__all__ = ["ZMatrixFactory"]
+__all__ = ["ZMatrixFactory", "build_fake_topology"]
 
 
 class ZMatrixFactory:
@@ -215,5 +216,32 @@ class ZMatrixFactory:
         raise NotImplementedError()
 
 
+def build_fake_topology(n_atoms, bonds=None, atoms_by_residue=None, coordinates=None):
+    """A stupid function to build an MDtraj topology with limited information."""
+    topology = md.Topology()
 
+    if bonds is None:   # assume linear molecule
+        bonds = np.column_stack([np.arange(n_atoms-1), np.arange(1, n_atoms)])
+    if atoms_by_residue is None:   # 1 atom per residue
+        atoms = set([atom for bond in bonds for atom in bond])
+        atoms_by_residue = [[atom] for atom in atoms]
 
+    chain = topology.add_chain()
+    for res in atoms_by_residue:
+        residue = topology.add_residue("C", chain)
+        for _ in res:
+            topology.add_atom("CA", chain, residue)
+    atoms = list(topology.atoms)
+    for bond in bonds:
+        atom1 = atoms[bond[0]]
+        atom2 = atoms[bond[1]]
+        topology.add_bond(atom1, atom2)
+
+    trajectory = None
+    if coordinates is not None:
+        coords = coordinates.reshape(-1, n_atoms, 3)
+        trajectory = md.Trajectory(
+            xyz=coords,
+            topology=topology
+        )
+    return topology, trajectory
