@@ -1,8 +1,10 @@
 import pytest
+import warnings
+import numpy as np
 import torch
 from simtk import unit
-from openmmsystems.systems import ImplicitBPTI, MiniPeptide, AlanineDipeptideImplicit
-from openmmsystems.zmatrix import make_protein_z_matrix
+from openmmsystems.systems import ImplicitBPTI, MiniPeptide, AlanineDipeptideImplicit, AlanineDipeptideTSF
+from openmmsystems.zmatrix import make_protein_z_matrix, ZMatrixFactory
 from bgtorch import (
     RelativeInternalCoordinateTransformation,
     MixedCoordinateTransformation,
@@ -10,16 +12,27 @@ from bgtorch import (
 )
 
 
+def _check_trafo_complete(trafo, system):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")  # we don't care if this is numerically sound for now
+        xyz = torch.tensor(np.array(system.positions._value)).reshape(1,-1)
+        trafo.to(xyz)
+        *out, dlogp = trafo.forward(xyz)
+        xyz2, dlogp2 = trafo.forward(*out, inverse=True)
+        assert xyz.shape == xyz2.shape
+
 @pytest.mark.parametrize("system", [
     #AlanineDipeptideImplicit(),
     ImplicitBPTI()
 ])
 def test_z_matrix_mixed_trafo(system):
     top = system.mdtraj_topology
-    zmatrix, fixed = make_protein_z_matrix(top, "backbone")
-    #print([list(top.atoms)[i] for i in top.select("backbone")])
-    data = torch.tensor(system.positions.value_in_unit(unit.nanometer)).reshape(1,-1)
-    MixedCoordinateTransformation(data, zmatrix, fixed)
+    factory = ZMatrixFactory(top, "backbone")
+    zmatrix, fixed = factory.build_with_templates()
+    positions = torch.tensor(system.positions.value_in_unit(unit.nanometer)).reshape(1,-1)
+    data = positions.repeat(100, 1) + torch.randn(100, len(positions))
+    trafo = MixedCoordinateTransformation(data, zmatrix, fixed, keepdims=10)
+    _check_trafo_complete(trafo, system)
 
 
 @pytest.mark.parametrize("system", [
@@ -28,5 +41,29 @@ def test_z_matrix_mixed_trafo(system):
 ])
 def test_z_matrix_global_trafo(system):
     top = system.mdtraj_topology
-    zmatrix = make_protein_z_matrix(top, cartesian=None)
-    #trafo = GlobalInternalCoordinateTransformation(zmatrix)
+    factory = ZMatrixFactory(top)
+    zmatrix, _ = factory.build_with_templates()
+    trafo = GlobalInternalCoordinateTransformation(zmatrix)
+    _check_trafo_complete(trafo, system)
+
+
+def test_z_factory_global():
+    system = AlanineDipeptideImplicit()
+    top = system.mdtraj_topology
+    factory = ZMatrixFactory(top)
+    z, _ = factory.build_naive()
+    assert len(z) == top.n_atoms
+    assert (np.sort(z[:,0]) == np.arange(top.n_atoms)).all()
+    trafo = GlobalInternalCoordinateTransformation(z)
+    _check_trafo_complete(trafo, system)
+
+
+def test_z_factory_relative():
+    system = AlanineDipeptideImplicit()
+    top = system.mdtraj_topology
+    factory = ZMatrixFactory(top, cartesian="element C")
+    z, fixed = factory.build_naive()
+    assert len(z) == top.n_atoms
+    assert (np.sort(z[:,0]) == np.arange(top.n_atoms)).all()
+    trafo = RelativeInternalCoordinateTransformation(z, fixed)
+    _check_trafo_complete(trafo, system)

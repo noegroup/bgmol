@@ -96,10 +96,6 @@ class OpenMMSystemsException(Exception):
 def get_data_file(relative_path):
     """Get the full path to one of the reference files.
 
-    In the source distribution, these files are in ``openmmtools/_openmmtools_data/*/``,
-    but on installation, they're moved to somewhere in the user's python
-    site-packages directory.
-
     Parameters
     ----------
     name : str
