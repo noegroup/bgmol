@@ -3,8 +3,8 @@ import warnings
 import numpy as np
 import torch
 from simtk import unit
-from openmmsystems.systems import ImplicitBPTI, MiniPeptide, AlanineDipeptideImplicit, AlanineDipeptideTSF
-from openmmsystems.zmatrix import make_protein_z_matrix, ZMatrixFactory
+from openmmsystems.systems import ImplicitBPTI, AlanineDipeptideImplicit
+from openmmsystems.zmatrix import ZMatrixFactory
 from bgtorch import (
     RelativeInternalCoordinateTransformation,
     MixedCoordinateTransformation,
@@ -20,6 +20,7 @@ def _check_trafo_complete(trafo, system):
         *out, dlogp = trafo.forward(xyz)
         xyz2, dlogp2 = trafo.forward(*out, inverse=True)
         assert xyz.shape == xyz2.shape
+
 
 @pytest.mark.parametrize("system", [
     #AlanineDipeptideImplicit(),
