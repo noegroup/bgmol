@@ -11,6 +11,25 @@ __all__ = ["ZMatrixFactory"]
 
 
 class ZMatrixFactory:
+    """Factory for internal coordinate representations.
+
+    Parameters
+    ----------
+    mdtraj_topology : mdtraj.Topology
+        The system's topology.
+    cartesian : str or sequence of ints
+        The ids of atoms that are not transformed into internal coordinates.
+        This can either be a sequence of integers or a DSL selection string for mdtraj.
+
+    Attributes
+    ----------
+    z_matrix : np.ndarray
+        The internal coordinate definition of shape (n_atoms - n_cartesian, 4).
+        For each line, the placing of atom `line[0]` is conditioned on the atoms `line[1:3]`.
+        Negative entries (-1) in a line mean that the atom is a seed for the global transform.
+    fixed : np.ndarray
+        One-dimensional array of cartesian atom indices.
+    """
     TEMPLATE_LOOKUP_DIR = get_data_file("../data/")
 
     @property
@@ -32,7 +51,18 @@ class ZMatrixFactory:
     # === naive builder and helpers ===
 
     def build_naive(self, subset="all"):
-        """Place atoms relative to the closest atoms that are already placed (wrt. bond topology)."""
+        """Place atoms relative to the closest atoms that are already placed (wrt. bond topology).
+
+        Parameters
+        ----------
+        subset : str or sequence of int
+            A selection string or list of atoms. The z-matrix is only build for the subset.
+
+        Returns
+        -------
+        z_matrix : np.ndarray
+        fixed_atoms : np.ndarray
+        """
         subset = self._select(subset)
         if len(list(self._placed_atoms())) == 0:
             self._z = [[0, -1, -1, -1]]
@@ -84,6 +114,28 @@ class ZMatrixFactory:
     # === template builder and helpers ===
 
     def build_with_templates(self, yaml_file="z_protein.yaml", *yaml_files, build_protein_backbone=True, subset="all"):
+        """Build ICs from template files.
+
+        Parameters
+        ----------
+        yaml_file : str
+            filename of first template file (just so we can define a default)
+        *yaml_files : str
+            filenames of any other template files
+        build_protein_backbone : bool
+            Whether to build the protein backbone first
+        subset : str or sequence of int
+            A selection string or list of atoms. The z-matrix is only build for the subset.
+
+        Notes
+        -----
+        For the formatting of template files, see data/z_protein.yaml
+
+        Returns
+        -------
+        z_matrix : np.ndarray
+        fixed_atoms : np.ndarray
+        """
         subset = self._select(subset)
         templates = self._load_templates(yaml_file, *yaml_files)
 
@@ -115,7 +167,7 @@ class ZMatrixFactory:
 
         # append missing
         placed = np.array(list(self._placed_atoms()))
-        if not len(placed) == self.top.n_atoms:
+        if not len(placed) == len(subset):
             warnings.warn(
                 f"Not all atoms found in templates. Applying naive reconstruction for missing atoms: "
                 f"{np.setdiff1d(np.arange(self.top.n_atoms), placed)}"
@@ -155,6 +207,11 @@ class ZMatrixFactory:
         return templates
 
     def build_with_system(self, system):
+        """
+        Idea: build a lookup table of torsions and impropers; sort them by marginal entropy.
+        Before doing the naive lookup, try to insert in the minimum-entropy torsions.
+        Maybe: also do something regarding symmetries.
+        """
         raise NotImplementedError()
 
 
