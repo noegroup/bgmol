@@ -15,6 +15,7 @@ DATAPATH = os.path.join(os.path.dirname(os.path.normpath(__file__)), "data")
 from . import datasets
 from . import systems
 from .api import *
+from .zmatrix import *
 
 
 # Handle versioneer
