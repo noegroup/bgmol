@@ -1,6 +1,7 @@
 
 import os
 import warnings
+from copy import copy
 
 import numpy as np
 import mdtraj as md
@@ -35,11 +36,11 @@ class ZMatrixFactory:
 
     @property
     def z_matrix(self):
-        return np.array(self._z)
+        return np.array(self._z).astype(np.int64)
 
     @property
     def fixed(self):
-        return np.array(self._cartesian)
+        return np.array(self._cartesian).astype(np.int64)
 
     def __init__(self, mdtraj_topology, cartesian=()):
         self.top = mdtraj_topology
@@ -65,16 +66,24 @@ class ZMatrixFactory:
         fixed_atoms : np.ndarray
         """
         subset = self._select(subset)
-        if len(list(self._placed_atoms())) == 0:
-            self._z = [[0, -1, -1, -1]]
-        for atom in self._placed_atoms():
-            for neighbor in self._neighbors(atom):
-                if neighbor in subset:
-                    if not self._is_placed(neighbor):
-                        closest = self._3closest_placed_atoms(neighbor)
-                        # pad with -1
-                        closest3 = np.pad(closest, (0, 3-len(closest)), constant_values=-1)
-                        self._z.append([neighbor, *closest3])
+        current = set(self._placed_atoms())
+        if len(current) < 3:
+            self._z = self._seed_z(current, subset)
+            for torsion in self._z:
+                current.add(torsion[0])
+        while len(current) > 0:
+            for atom in copy(current):
+                if self._is_placed(atom):
+                    for neighbor in self._neighbors(atom):
+                        if not self._is_placed(neighbor) and neighbor in subset:
+                            current.add(neighbor)
+                    current.remove(atom)
+            z = []
+            for atom in current:
+                closest = self._3closest_placed_atoms(atom, subset=subset)
+                if len(closest) == 3:
+                    z.append([atom, *closest])
+            self._z.extend(z)
         return self.z_matrix, self.fixed
 
     @staticmethod
@@ -87,12 +96,28 @@ class ZMatrixFactory:
                 matrix[this.index, other.index] = dist[other]
         return matrix
 
+    def _seed_z(self, current, subset):
+        current = list(current)
+        if len(current) == 0:
+            current = [0]
+        closest = self._3closest_placed_atoms(current[0], subset, subset)
+        seed = np.unique([*current, *closest])[:3]
+        z = [
+            [seed[0], -1, -1, -1],
+            [seed[1], seed[0], -1, -1],
+            [seed[2], seed[1], seed[0], -1],
+        ]
+        return z
+
     def _neighbors(self, i):
         for neighbor in self.graph.neighbors(self._atoms[i]):
             yield neighbor.index
 
     def _is_placed(self, i):
-        return any(torsion[0] == i for torsion in self._z)
+        return (
+                any(torsion[0] == i for torsion in self._z)
+                or any(f == i for f in self._cartesian)
+        )
 
     def _placed_atoms(self):
         for f in self._cartesian:
@@ -103,8 +128,11 @@ class ZMatrixFactory:
     def _torsion_index(self, i):
         return list(self._placed_atoms()).index(i)
 
-    def _3closest_placed_atoms(self, i):
-        placed = np.array(list(self._placed_atoms()))
+    def _3closest_placed_atoms(self, i, placed=None, subset=None):
+        if placed is None:
+            placed = np.array(list(self._placed_atoms()))
+        if subset is not None:
+            placed = np.intersect1d(placed, subset)
         argsort = np.argsort(self._distances[i, placed])
         closest_atoms = placed[argsort[:3]]
         return closest_atoms
