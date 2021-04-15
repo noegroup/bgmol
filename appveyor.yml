@@ -38,7 +38,7 @@ install:
 build: false
 
 test_script:
-  - pytest -v --cov=openmmsystems openmmsystems\\tests
+  - pytest -v --cov=bgmol bgmol\\tests
 
 on_success:
   - codecov

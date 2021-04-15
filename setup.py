@@ -21,7 +21,7 @@ except:
 
 setup(
     # Self-descriptive entries which should always be present
-    name='openmmsystems',
+    name='bgmol',
     author='noegroup',
     author_email='andreas.kraemer@fu-berlin.de',
     description=short_description[0],
@@ -46,7 +46,7 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'openmmsystems=openmmsystems.cli:main',
+            'bgmol=bgmol.cli:main',
         ],
     },
     # Additional entries you may want simply uncomment the lines you want and fill in the data
