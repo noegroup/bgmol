@@ -42,7 +42,7 @@ install:
 
 
 script:
-  - pytest -v --cov=openmmsystems openmmsystems/tests/
+  - pytest -v --cov=bgmol bgmol/tests/
 
 notifications:
     email: false

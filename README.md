@@ -1,4 +1,4 @@
-openmmsystems
+bgmol
 ==============================
 [//]: # (Badges)
 [![Travis Build Status](https://travis-ci.com/REPLACE_WITH_OWNER_ACCOUNT/ProjectName.svg?branch=master)](https://travis-ci.com/REPLACE_WITH_OWNER_ACCOUNT/ProjectName)
@@ -19,12 +19,12 @@ Make sure that you are in a conda environment that has **OpenMM** and **mdtraj**
 
 Clone the code
 ```
-git clone git@github.com:noegroup/openmmsystems.git
+git clone git@github.com:noegroup/bgmol.git
 ```
 
 And install
 ```
-cd openmmsystems
+cd bgmol
 python setup.py install
 ```
 
@@ -32,7 +32,7 @@ python setup.py install
 ### Quickstart: Example
 
 ```python
-from openmmsystems.datasets import Ala2Implicit300
+from bgmol.datasets import Ala2Implicit300
 dataset = Ala2Implicit300(download=True, read=True)
 ```
 
@@ -83,28 +83,28 @@ or directory name).
 
 Subclasses of `OpenMMSystem` can be created via their constructor:
 ```python
-from openmmsystems import BPTIImplicit
+from bgmol import BPTIImplicit
 bpti = BPTIImplicit()
 ```
 
 All available systems can also be created via their identifier:
 
 ```python
-from openmmsystems import get_system
+from bgmol import get_system
 ala = get_system("AlanineDipeptideImplicit")  # this is a system defined in openmmtools_testsystems
 print(ala.info())
 ```
 
 Identifiers can be:
-1) Class names in `openmmsystems.systems` (subclasses of `openmmsystems.OpenMMSystem`)
-2) Directory names in `openmmsystems/systems` (each subdirectory defines a system, as specified below)
-3) Class names in `openmmsystems/openmmtools_testsystems` (subclasses of `openmmtools_testsystems.TestSystem`)
+1) Class names in `bgmol.systems` (subclasses of `bgmol.OpenMMSystem`)
+2) Directory names in `bgmol/systems` (each subdirectory defines a system, as specified below)
+3) Class names in `bgmol/openmmtools_testsystems` (subclasses of `openmmtools_testsystems.TestSystem`)
 
 `OpenMMSystem` instances may have keyword arguments, for example:
 
 ```python
 from simtk import unit
-from openmmsystems import system_by_name
+from bgmol import system_by_name
 
 system_by_name(
     "HarmonicOscillator", 
@@ -123,21 +123,21 @@ This means that not all samples are accessible for all users; they may require a
 You can list all registered data (sets of positions, forces, energies, velocities) for a system:
 
 ```python
-from openmmsystems import list_all_data
+from bgmol import list_all_data
 list_all_data("AlanineDipeptideImplicit")
 ```
 
 You can also list only the data sets that are accessible for you from your machine:
 
 ```python
-from openmmsystems import list_accessible_data
+from bgmol import list_accessible_data
 list_accessible_data("AlanineDipeptideImplicit")
 ```
 
 or data that is available for a given set of constructor arguments
 
 ```python
-from openmmsystems import list_accessible_data
+from bgmol import list_accessible_data
 ala_samples = list_accessible_data("HarmonicOscillator", mass=39.948*unit.amu)
 ```
 
@@ -145,7 +145,7 @@ Samples also have unique identifiers (the name of a yaml file, as specified belo
 ```python
 bpti_data = get_data("bpti_implicit_mini_example")
 print(bpti_data.info())
-bpti_data.download()  # gets stored in $HOME/openmmsystems_data/datasets
+bpti_data.download()  # gets stored in $HOME/bgmol_data/datasets
 bpti_data.read() # load data into memory
 bpti_data.randomize() # random permutation
 
@@ -162,7 +162,7 @@ bpti_data = bpti_data.create_openmm_system()
 
 ### Adding Systems to the Repository
 
-The preferred way to add systems is by adding a subclass of `OpenMMSystem` to the `openmmsystems.systems` module, 
+The preferred way to add systems is by adding a subclass of `OpenMMSystem` to the `bgmol.systems` module, 
 see examples therein. 
 
 ### Adding Samples to the Repository
