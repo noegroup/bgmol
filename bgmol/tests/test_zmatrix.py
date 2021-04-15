@@ -5,7 +5,7 @@ import torch
 from simtk import unit
 from bgmol.systems import ImplicitBPTI, AlanineDipeptideImplicit
 from bgmol.zmatrix import ZMatrixFactory, build_fake_topology
-from bgtorch import (
+from bgflow import (
     RelativeInternalCoordinateTransformation,
     MixedCoordinateTransformation,
     GlobalInternalCoordinateTransformation

@@ -3,8 +3,8 @@ Toy systems that do not require an MD engine.
 """
 
 
-from bgtorch.distribution.energy import Energy
-from bgtorch.utils.geometry import distance_vectors, distances_from_vectors
+from bgflow.distribution.energy import Energy
+from bgflow.utils.geometry import distance_vectors, distances_from_vectors
 
 
 class DoubleWellEnergy(Energy):
