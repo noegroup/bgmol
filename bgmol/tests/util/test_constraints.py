@@ -28,10 +28,15 @@ def force_correction(forces, positions, system, atom_indices):
 def test_ala2_1000(ala2dataset):
     projected_forces = project_forces_onto_constraints(
         ala2dataset.forces,
+        ala2dataset.xyz,
         ala2dataset.system.system,
         ala2dataset.system.mdtraj_topology.select(ala2dataset.selection)
     )
     assert not np.allclose(ala2dataset.forces, projected_forces)
+    assert (  # average change smaller than 10%
+            np.abs(ala2dataset.forces - projected_forces).mean() /
+            np.abs(ala2dataset.forces).mean()
+    ) < 0.1
 
     # check that the force correction for the original forces is big
     correction1, correction2 = force_correction(

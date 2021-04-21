@@ -6,7 +6,7 @@ from simtk import unit
 __all__ = ["project_forces_onto_constraints"]
 
 
-def project_forces_onto_constraints(forces, openmm_system, atom_indices=None):
+def project_forces_onto_constraints(forces, positions, openmm_system, atom_indices=None):
     """Project forces onto the tangent space of the constraint manifold.
 
     The background is that simulation engines usually apply the constraints to velocities and positions
@@ -16,6 +16,8 @@ def project_forces_onto_constraints(forces, openmm_system, atom_indices=None):
     ----------
     forces : np.ndarray
         Force array of shape (n_samples, n_selected_atoms, 3)
+    positions : np.ndarray
+        Position array of shape (n_samples, n_selected_atoms, 3)
     openmm_system : openmm.System
         The system that stores the constraint and mass information
     atom_indices : iterable of int
@@ -29,21 +31,24 @@ def project_forces_onto_constraints(forces, openmm_system, atom_indices=None):
     atom_indices = np.arange(openmm_system.getNumParticles()) if atom_indices is None else atom_indices
     n_particles = len(atom_indices)
     assert n_particles == forces.shape[1]
+    assert n_particles == positions.shape[1]
     constraints = _get_constraints(openmm_system, atom_indices)
     masses = _get_masses(openmm_system, atom_indices)
-    jacobian = _build_constraint_jacobian(constraints, n_particles)
-    matrix = jacobian @ np.diag(1/masses) @ jacobian.transpose()
-    rhs = - jacobian @ np.diag(1/masses) @ forces
+    jacobian = _build_constraint_jacobian(constraints, positions)
+    matrix = np.einsum("bcrx,r,bdrx -> bcd", jacobian, 1/masses, jacobian)
+    rhs = - np.einsum("bcrx,r,brx->bc", jacobian, 1/masses, forces)
     correction_scale = np.linalg.solve(matrix, rhs)
     projected_forces = forces.copy()
-    projected_forces += jacobian.transpose() @ correction_scale
-    return projected_forces
+    correction = np.einsum("bjrx,bj->brx", jacobian, correction_scale)
+    return projected_forces + correction
 
 
-def _build_constraint_jacobian(constraints, num_particles):
-    jacobian = np.zeros((len(constraints), num_particles))
-    jacobian[np.arange(len(constraints)), constraints[:, 0]] = 2
-    jacobian[np.arange(len(constraints)), constraints[:, 1]] = -2
+def _build_constraint_jacobian(constraints, positions):
+    batchsize = positions.shape[0]
+    jacobian = np.zeros((batchsize, len(constraints), positions.shape[1], 3))
+    distance_vector = positions[:, constraints[:,0], :] - positions[:, constraints[:,1], :]
+    jacobian[:, np.arange(len(constraints)), constraints[:, 0], :] = 2 * distance_vector
+    jacobian[:, np.arange(len(constraints)), constraints[:, 1], :] = -2 * distance_vector
     return jacobian
 
 
