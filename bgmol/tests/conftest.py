@@ -2,6 +2,7 @@
 
 import pytest
 import os
+from bgmol.datasets import Ala2Implicit1000
 from bgmol import systems, api
 
 
@@ -23,6 +24,11 @@ def get_fn():
     def _get_fn(fn):
         return '{}/data/{}'.format(test_dir, fn)
     return _get_fn
+
+
+@pytest.fixture(scope="session")
+def ala2dataset(tmpdir_factory):
+    return Ala2Implicit1000(root=tmpdir_factory.mktemp("ala2dataset"), download=True, read=True)
 
 
 # skipping slow tests by default

@@ -2,12 +2,12 @@
 import pytest
 
 import mdtraj as md
-from bgmol.datasets import Ala2Implicit1000, Ala2TSF300, Ala2TSF600, Ala2TSF1000
+from bgmol.datasets import Ala2TSF300, Ala2TSF600, Ala2TSF1000
 from bgmol.systems.ala2 import DEFAULT_Z_MATRIX, DEFAULT_RIGID_BLOCK
 
 
-def test_ala2_1000(tmpdir):
-    dataset = Ala2Implicit1000(root=tmpdir, download=True, read=True)
+def test_ala2_1000(ala2dataset):
+    dataset = ala2dataset
     assert dataset.coordinates.shape == (len(dataset), 22, 3)
     assert dataset.forces.shape == (len(dataset), 22, 3)
     assert dataset.energies.shape == (len(dataset), )
