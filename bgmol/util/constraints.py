@@ -14,12 +14,17 @@ def project_forces_onto_constraints(forces, openmm_system, atom_indices=None):
 
     Parameters
     ----------
-    forces: np.ndarray
+    forces : np.ndarray
         Force array of shape (n_samples, n_selected_atoms, 3)
     openmm_system : openmm.System
         The system that stores the constraint and mass information
     atom_indices : iterable of int
         The selected atom_ids. If None, assume that the force array contains forces for all atoms in the system.
+
+    Returns
+    -------
+    projected_forces : np.ndarray
+        Force array of shape (n_samples, n_selected_atoms, 3).
     """
     atom_indices = np.arange(openmm_system.getNumParticles()) if atom_indices is None else atom_indices
     n_particles = len(atom_indices)
