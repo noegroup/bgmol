@@ -22,9 +22,9 @@ class ChignolinOBC2PT(DataSet):
 
     """
     url = "ftp://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/datasets/chignolin/ChignolinOBC2PT.tgz"
-    md5 = "4a89f5ab3b91adf868f07404f8df2a8b"
+    md5 = "d1d5cd96414a5ab8915113a71a4a2325"
     num_frames = 160000
-    size = 1522856
+    size = 1826236
     selection = "all"
     openmm_version = "7.4.2"
     date = "2021/02/10"
