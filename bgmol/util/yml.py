@@ -1,21 +1,23 @@
 """
-Utility module
+YAML utilities
 """
 
-import os
-from pkg_resources import resource_filename
-
 import yaml
-
+from mdtraj.utils.unit import _str_to_unit
 from simtk import unit
 from simtk.openmm import app
 from simtk.openmm.app.internal.singleton import Singleton
 
-from mdtraj.utils.unit import _str_to_unit
 
-# ==========================================================================================
-# YAML utilities
-# ==========================================================================================
+__all__ = [
+    "parse_quantity",
+    "quantity_representer",
+    "quantity_constructor",
+    "singleton_constructor",
+    "singleton_representer",
+    "yaml_load",
+    "yaml_dump"
+]
 
 
 def parse_quantity(string):
@@ -78,33 +80,3 @@ def yaml_load(stream, Loader=yaml.SafeLoader):
     yaml.add_constructor('!quantity', quantity_constructor, Loader=Loader)
     yaml.add_constructor('!openmm', singleton_constructor, Loader=Loader)
     return yaml.load(stream, Loader=Loader)
-
-# ==========================================================================================
-# Exceptions
-# ==========================================================================================
-
-
-class BGMolException(Exception):
-    """Base Exception for Package"""
-    pass
-
-
-# ==========================================================================================
-# Paths
-# ==========================================================================================
-
-def get_data_file(relative_path):
-    """Get the full path to one of the reference files.
-
-    Parameters
-    ----------
-    name : str
-        Name of the file to load (with respect to the repex folder).
-
-    """
-    fn = resource_filename('bgmol.systems', relative_path)
-
-    if not os.path.exists(fn):
-        raise ValueError("Sorry! %s does not exist. If you just added it, you'll have to re-install" % fn)
-
-    return fn
