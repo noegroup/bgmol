@@ -58,126 +58,14 @@ The dataset contains coordinates (xyz), forces, and energies.
 dataset.energies
 ```
 
-
-# get data and OpenMMSystem instance
-bpti_data = get_data("bpti_implicit_mini_example")
-bpti = bpti_data.create_openmm_system()
-print(bpti_data.info())
-
-# download data
-bpti_data.download()
-bpti_data.read()
-print(bpti_data.positions)
-trajectory = bpti_data.to_mdtraj()
-
-# evaluate energies
-from simtk.openmm import LangevinIntegrator
-energy_bridge = OpenMMEnergyBridge(bpti.system, LangevinIntegrator(300,1,0.0002))
-energies, force = energy_bridge.evaluate(bpti_data.positions)
-```
-
-### Using Systems from this Repository
-
-Each `OpenMMSystem` has a system object, a topology, a set of initial positions, and a unique identifier (the class 
-or directory name).
-
-Subclasses of `OpenMMSystem` can be created via their constructor:
-```python
-from bgmol import BPTIImplicit
-bpti = BPTIImplicit()
-```
-
-All available systems can also be created via their identifier:
-
-```python
-from bgmol import get_system
-ala = get_system("AlanineDipeptideImplicit")  # this is a system defined in openmmtools_testsystems
-print(ala.info())
-```
-
-Identifiers can be:
-1) Class names in `bgmol.systems` (subclasses of `bgmol.OpenMMSystem`)
-2) Directory names in `bgmol/systems` (each subdirectory defines a system, as specified below)
-3) Class names in `bgmol/openmmtools_testsystems` (subclasses of `openmmtools_testsystems.TestSystem`)
-
-`OpenMMSystem` instances may have keyword arguments, for example:
-
-```python
-from simtk import unit
-from bgmol import system_by_name
-
-system_by_name(
-    "HarmonicOscillator", 
-    K=100.0*unit.kilocalories_per_mole / unit.angstroms**2, 
-    mass=39.948*unit.amu
-)
-```
-
-
-### Using Data from this Repository
-
-The samples created for the different systems do not live in the repository 
-but in some path (webserver, compute cluster, local network, local machine).
-This means that not all samples are accessible for all users; they may require access to specific clusters, etc.
-
-You can list all registered data (sets of positions, forces, energies, velocities) for a system:
-
-```python
-from bgmol import list_all_data
-list_all_data("AlanineDipeptideImplicit")
-```
-
-You can also list only the data sets that are accessible for you from your machine:
-
-```python
-from bgmol import list_accessible_data
-list_accessible_data("AlanineDipeptideImplicit")
-```
-
-or data that is available for a given set of constructor arguments
-
-```python
-from bgmol import list_accessible_data
-ala_samples = list_accessible_data("HarmonicOscillator", mass=39.948*unit.amu)
-```
-
-Samples also have unique identifiers (the name of a yaml file, as specified below) and can be read as follows 
-```python
-bpti_data = get_data("bpti_implicit_mini_example")
-print(bpti_data.info())
-bpti_data.download()  # gets stored in $HOME/bgmol_data/datasets
-bpti_data.read() # load data into memory
-bpti_data.randomize() # random permutation
-
-# Now, randomly reordered positions and forces are accessible as numpy arrays
-bpti_data.positions
-bpti_data.forces
-```
-
-For each data set, you can also get the system
-```python
-bpti_data = bpti_data.create_openmm_system()
-```
-
-
 ### Adding Systems to the Repository
 
 The preferred way to add systems is by adding a subclass of `OpenMMSystem` to the `bgmol.systems` module, 
 see examples therein. 
 
 ### Adding Samples to the Repository
+TBD
 
-
-### Customization
-
-
-### Evaluating Energies
-
-TODO: The BGTorch openmm wrapper would have a natural place in this repository.
-
-### Creating Samples
-
-TODO: simple API to extend a data set.
 
 ### Copyright
 
