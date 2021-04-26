@@ -1,6 +1,7 @@
 import os
 import warnings
 import tempfile
+import numpy as np
 from simtk import unit
 from simtk.openmm import app
 from ..systems.base import OpenMMSystem
@@ -76,8 +77,10 @@ class ChignolinC22Implicit(OpenMMSystem):
             hydrogenMass=hydrogen_mass,
             implicitSolvent=implicit_solvent
         )
-        self._positions = crds.positions
+        self._positions = np.array(crds.positions.value_in_unit(unit.nanometer))
         self._topology = crds.topology
+
+        self._tica_mean, self._tica_eig = self._read_tica(root)
 
     def _download(self, root):
         # download
@@ -86,10 +89,42 @@ class ChignolinC22Implicit(OpenMMSystem):
             download_url(self.url+sourcefile, root, sourcefile, md5)
             assert os.path.isfile(os.path.join(root, sourcefile))
 
+    def _read_tica(self, root):
+        npz = np.load(os.path.join(root, "chignolin_tica.npz"))
+        return npz["tica_mean"], npz["tica_eigenvectors"]
+
     FILES = {
         "parameters_ak.prm": "d953daf4925e4146a5fcece875ee4e57",
         "structure.pdb": "be19629a75e0ee4e1cc3c72a9ebc63c6",
         "structure.psf": "944b26edb992c7dbdaa441675b9e42c5",
         "top_all22star_prot.rtf": "d046c9a998369be142a6470fd5bb3de1",
-        "top_water_ions.rtf": "ade085f88e869de304c814bf2d0e57fe"
+        "top_water_ions.rtf": "ade085f88e869de304c814bf2d0e57fe",
+        "chignolin_tica.npz": "9623ea5b73f48b6952db666d586a27d6"
     }
+
+    def to_tics(self, xs, eigs_kept=None):
+        c_alpha = self.mdtraj_topology.select("name == CA")
+        xs = xs.reshape(xs.shape[0], -1, 3)
+        xs = xs[:, c_alpha, :]
+        if eigs_kept is None:
+            eigs_kept = self._tica_eig.shape[-1]
+        dists = all_distances(xs)
+        return (dists - self._tica_mean) @ self._tica_eig[:, :eigs_kept]
+
+
+def all_distances(xs):
+    if isinstance(xs, np.ndarray):
+        mask = np.triu(np.ones([xs.shape[-2], xs.shape[-2]]), k=1).astype(bool)
+        xs2 = np.square(xs).sum(axis=-1)
+        ds2 = xs2[..., None] + xs2[..., None, :] - 2 * np.einsum("nid, njd -> nij", xs, xs)
+        ds2 = ds2[:, mask].reshape(xs.shape[0], -1)
+        ds = np.sqrt(ds2)
+    else:
+        import torch
+        assert isinstance(xs, torch.Tensor)
+        mask = torch.triu(torch.ones([xs.shape[-2], xs.shape[-2]]), diagonal=1).bool()
+        xs2 = xs.pow(2).sum(dim=-1)
+        ds2 = xs2[..., None] + xs2[..., None, :] - 2 * torch.einsum("nid, njd -> nij", xs, xs)
+        ds2 = ds2[:, mask].view(xs.shape[0], -1)
+        ds = ds2.sqrt()
+    return ds
