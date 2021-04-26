@@ -31,6 +31,10 @@ class MiniPeptide(OpenMMSystem):
         The cutoff for nonbonded forces.
     switch_distance : unit.Quantity or None
         Switch distance for nonbonded (LJ) interactions. If None, don't use a switch distance.
+    root : str
+        The root directory to which to download the files.
+    download : bool
+        Whether files should be downloaded.
 
     Notes
     -----
