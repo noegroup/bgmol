@@ -67,9 +67,9 @@ class ChignolinC22Implicit(OpenMMSystem):
             )
 
         # create system
-        solv = app.CharmmPsfFile(os.path.join(root, "structure.psf"))
+        psf = app.CharmmPsfFile(os.path.join(root, "structure.psf"))
         crds = app.PDBFile(os.path.join(root, "structure.pdb"))
-        self._system = solv.createSystem(
+        self._system = psf.createSystem(
             params,
             nonbondedMethod=app.NoCutoff,
             constraints=constraints,
@@ -91,5 +91,5 @@ class ChignolinC22Implicit(OpenMMSystem):
         "structure.pdb": "be19629a75e0ee4e1cc3c72a9ebc63c6",
         "structure.psf": "944b26edb992c7dbdaa441675b9e42c5",
         "top_all22star_prot.rtf": "d046c9a998369be142a6470fd5bb3de1",
-        "top_water_ions.rtf": " ade085f88e869de304c814bf2d0e57fe"
+        "top_water_ions.rtf": "ade085f88e869de304c814bf2d0e57fe"
     }

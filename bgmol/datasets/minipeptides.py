@@ -16,7 +16,7 @@ __all__ = ["ASolvatedAmoeba", "ASolvatedAmber14", "ASolvatedAmber99"]
 
 class ASolvatedAmoeba(DataSet):
     """Capped alanine in explicit water with Amoeba-2013.
-    20 ns Langevin dynamics with 1/ps friction coefficient and 0.5 ps time step.
+    20 ns Langevin dynamics with 1/ps friction coefficient and 0.5 fs time step.
     Samples are spaced in 1 ps intervals.
     The dataset contains positions, forces, and energies.
     """
