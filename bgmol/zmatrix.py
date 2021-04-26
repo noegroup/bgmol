@@ -72,12 +72,14 @@ class ZMatrixFactory:
             for torsion in self._z:
                 current.add(torsion[0])
         while len(current) > 0:
-            for atom in copy(current):
+            new_current = copy(current)
+            for atom in current:
                 if self._is_placed(atom):
                     for neighbor in self._neighbors(atom):
                         if not self._is_placed(neighbor) and neighbor in subset:
-                            current.add(neighbor)
-                    current.remove(atom)
+                            new_current.add(neighbor)
+                    new_current.remove(atom)
+            current = new_current
             z = []
             for atom in current:
                 closest = self._3closest_placed_atoms(atom, subset=subset)
@@ -185,13 +187,13 @@ class ZMatrixFactory:
 
             if is_nterm:
                 # set two additional N-term protons
-                if not self._is_placed(resatoms["H2"]):  # not in not_ic:
+                if "H2" in resatoms and not self._is_placed(resatoms["H2"]):  # not in not_ic:
                     self._z.append([resatoms["H2"], resatoms["N"], resatoms["CA"], resatoms["H"]])
-                if not self._is_placed(resatoms["H3"]):  # not in not_ic:
+                if "H3" in resatoms and not self._is_placed(resatoms["H3"]):  # not in not_ic:
                     self._z.append([resatoms["H3"], resatoms["N"], resatoms["CA"], resatoms["H2"]])
             elif is_cterm:
                 # place OXT
-                if not self._is_placed(resatoms["OXT"]):  # not in not_ic:
+                if "OXT" in resatoms and not self._is_placed(resatoms["OXT"]):  # not in not_ic:
                     self._z.append([resatoms["OXT"], resatoms["C"], resatoms["CA"], resatoms["O"]])
 
         # append missing

@@ -3,6 +3,7 @@
 import pytest
 import os
 from bgmol.datasets import Ala2Implicit1000
+from bgmol.systems import ChignolinC22Implicit
 from bgmol import systems, api
 
 
@@ -29,6 +30,11 @@ def get_fn():
 @pytest.fixture(scope="session")
 def ala2dataset(tmpdir_factory):
     return Ala2Implicit1000(root=tmpdir_factory.mktemp("ala2dataset"), download=True, read=True)
+
+
+@pytest.fixture(scope="session")
+def chignolin(tmpdir_factory):
+    return ChignolinC22Implicit(root=tmpdir_factory.mktemp("chignolin_system"))
 
 
 # skipping slow tests by default

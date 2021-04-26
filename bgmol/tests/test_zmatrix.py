@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 import torch
 from simtk import unit
-from bgmol.systems import ImplicitBPTI, AlanineDipeptideImplicit
+from bgmol.systems import ImplicitBPTI, AlanineDipeptideImplicit, ChignolinC22Implicit
 from bgmol.zmatrix import ZMatrixFactory, build_fake_topology
 from bgflow import (
     RelativeInternalCoordinateTransformation,
@@ -76,3 +76,10 @@ def test_z_factory_with_fake_topology():
     z, fixed = factory.build_naive()
     assert len(z) + len(fixed) == top.n_atoms
     RelativeInternalCoordinateTransformation(z, fixed)
+
+
+def test_z_factory_naive_cgn(chignolin):
+    factory = ZMatrixFactory(chignolin.mdtraj_topology, cartesian="name == CA")
+    z, fixed = factory.build_naive()
+    assert fixed.shape == (10, )
+    assert z.shape == (165, 4)

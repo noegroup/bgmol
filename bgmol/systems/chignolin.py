@@ -78,7 +78,7 @@ class ChignolinC22Implicit(OpenMMSystem):
             implicitSolvent=implicit_solvent
         )
         self._positions = np.array(crds.positions.value_in_unit(unit.nanometer))
-        self._topology = crds.topology
+        self._topology = psf.topology
 
         self._tica_mean, self._tica_eig = self._read_tica(root)
 
