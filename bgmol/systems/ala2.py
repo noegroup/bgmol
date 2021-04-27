@@ -3,9 +3,8 @@ import tempfile
 import numpy as np
 from simtk.openmm import app
 import mdtraj as md
-from bgmol.systems.base import OpenMMToolsTestSystem, OpenMMSystem
-from bgmol.tpl.download import download_url
-from bgmol.util import get_data_file
+from ..systems.base import OpenMMToolsTestSystem, OpenMMSystem
+from ..tpl.download import download_url
 
 
 __all__ = ["AlanineDipeptideImplicit", "AlanineDipeptideTSF"]
@@ -58,7 +57,7 @@ class AlanineDipeptideTSF(OpenMMSystem):
     Requires an internet connection to download the initial structure.
     """
 
-    url = "ftp://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/ala2/"
+    url = "ftp://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/systems/ala2/"
 
     def __init__(self,  root=tempfile.gettempdir(), download=True):
         super(AlanineDipeptideTSF, self).__init__()
