@@ -1,4 +1,5 @@
 
+import os
 import pytest
 import shutil
 
@@ -9,15 +10,19 @@ from bgmol.api import list_datasets
 
 
 @pytest.fixture(params=list_datasets())
-def all_datasets(request):
-    return request.param
+def all_datasets(request, tmpdir):
+    subdir = os.path.join(tmpdir, request.param)
+    os.mkdir(subdir)
+    yield request.param, subdir
+    shutil.rmtree(subdir)
 
 
 @pytest.mark.slow
-def test_all_datasets(all_datasets, tmpdir):
+def test_all_datasets(all_datasets):
     """Try downloading all datasets and compare energies and forces for a random frame."""
-    DatasetClass = getattr(datasets, all_datasets)
-    dataset = DatasetClass(root=str(tmpdir), read=True, download=True)
+    dataset_name, dataset_dir = all_datasets
+    DatasetClass = getattr(datasets, dataset_name)
+    dataset = DatasetClass(root=dataset_dir, read=True, download=True)
     system = dataset.system
 
     # check shapes
@@ -47,5 +52,4 @@ def test_all_datasets(all_datasets, tmpdir):
                 assert dataset.energies[random_frame] == pytest.approx(state.getPotentialEnergy()._value, abs=3e-1, rel=0.0)
             if dataset.forces is not None:
                 assert np.allclose(dataset.forces[random_frame], state.getForces(asNumpy=True)._value, atol=3e-1, rtol=0.0)
-    shutil.rmtree(tmpdir)
 
