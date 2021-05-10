@@ -5,7 +5,7 @@ import numpy as np
 from simtk import unit
 from simtk.openmm import app
 from ..systems.base import OpenMMSystem
-from ..tpl.download import download_url
+from torchvision.datasets.utils import download_url
 
 __all__ = ["ChignolinC22Implicit"]
 
@@ -30,7 +30,7 @@ class ChignolinC22Implicit(OpenMMSystem):
     -----
     Requires an internet connection to download the initial structure.
     """
-    url = "ftp://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/systems/chignolin/ChignolinC22Implicit/"
+    url = "http://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/systems/chignolin/ChignolinC22Implicit/"
 
     def __init__(
             self,

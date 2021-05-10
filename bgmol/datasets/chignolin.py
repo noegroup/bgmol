@@ -21,7 +21,7 @@ class ChignolinOBC2PT(DataSet):
 
 
     """
-    url = "ftp://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/datasets/chignolin/ChignolinOBC2PT.tgz"
+    url = "http://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/datasets/chignolin/ChignolinOBC2PT.tgz"
     md5 = "d1d5cd96414a5ab8915113a71a4a2325"
     num_frames = 160000
     size = 1826236

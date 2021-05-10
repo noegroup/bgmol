@@ -7,7 +7,7 @@ from simtk.openmm import app
 from simtk import unit
 from bgmol.systems import OpenMMSystem
 from bgmol.util import get_data_file
-from bgmol.tpl.download import download_url
+from torchvision.datasets.utils import download_url
 
 __all__ = ["MiniPeptide", "AMINO_ACIDS"]
 
@@ -40,7 +40,7 @@ class MiniPeptide(OpenMMSystem):
     -----
     Requires an internet connection to download the initial structure.
     """
-    url = "ftp://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/systems/minipeptides/"
+    url = "http://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/systems/minipeptides/"
 
     def __init__(
             self,
