@@ -2,10 +2,9 @@
 import os
 import numpy as np
 import mdtraj as md
-from mdtraj.utils import box_vectors_to_lengths_and_angles
-from bgmol.tpl.download import download_and_extract_archive
 from bgmol.tpl.hdf5 import load_hdf5, HDF5TrajectoryFile
 from simtk.openmm import LangevinIntegrator
+from torchvision.datasets.utils import download_and_extract_archive
 
 __all__ = ["DataSet"]
 
