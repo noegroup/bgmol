@@ -57,7 +57,7 @@ class AlanineDipeptideTSF(OpenMMSystem):
     Requires an internet connection to download the initial structure.
     """
 
-    url = "ftp://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/systems/ala2/"
+    url = "http://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/systems/ala2/"
 
     def __init__(self,  root=tempfile.gettempdir(), download=True):
         super(AlanineDipeptideTSF, self).__init__()

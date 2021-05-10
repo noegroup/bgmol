@@ -20,7 +20,7 @@ class ASolvatedAmoeba(DataSet):
     Samples are spaced in 1 ps intervals.
     The dataset contains positions, forces, and energies.
     """
-    url = "ftp://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/datasets/minipeptides/ASolvatedAmoeba.tgz"
+    url = "http://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/datasets/minipeptides/ASolvatedAmoeba.tgz"
     md5 = "0f5aab1b946e313ee4139cf1d7645199"
     num_frames = 20000
     size = 1253106
@@ -59,7 +59,7 @@ class ASolvatedAmber14(DataSet):
     Samples are spaced in 1 ps intervals.
     The dataset contains positions, forces, and energies.
     """
-    url = "ftp://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/datasets/minipeptides/ASolvatedAmber14.tgz"
+    url = "http://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/datasets/minipeptides/ASolvatedAmber14.tgz"
     md5 = "0bccb8e06dabf8a7fc11a407d7a360b3"
     num_frames = 20000
     size = 1252535
@@ -98,7 +98,7 @@ class ASolvatedAmber99(DataSet):
     The dataset contains protein all-atom positions, protein all-atom forces, and energies as well as
     specific forces and energies from the solvent environment.
     """
-    url = "ftp://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/datasets/minipeptides/ASolvatedAmber99.tgz"
+    url = "http://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/datasets/minipeptides/ASolvatedAmber99.tgz"
     md5 = "94b4a5221014ddfb03fb62cc5c7d67df"
     num_frames = 1000000
     size = 749056  # in bytes
@@ -145,7 +145,7 @@ class AImplicitUnconstrained(DataSet):
     1 microsecond samples spaced in 1 ps intervals.
     The dataset contains positions, forces, and energies.
     """
-    url = "ftp://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/datasets/minipeptides/AImplicitUnconstrained.tgz"
+    url = "http://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/datasets/minipeptides/AImplicitUnconstrained.tgz"
     md5 = "f18b9a9c06f3590f1632ca99161c6553"
     num_frames = 1000000
     size = 461080  # in bytes

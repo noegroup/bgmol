@@ -30,7 +30,7 @@ class ChignolinC22Implicit(OpenMMSystem):
     -----
     Requires an internet connection to download the initial structure.
     """
-    url = "ftp://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/systems/chignolin/ChignolinC22Implicit/"
+    url = "http://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/systems/chignolin/ChignolinC22Implicit/"
 
     def __init__(
             self,

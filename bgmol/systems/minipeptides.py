@@ -40,7 +40,7 @@ class MiniPeptide(OpenMMSystem):
     -----
     Requires an internet connection to download the initial structure.
     """
-    url = "ftp://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/systems/minipeptides/"
+    url = "http://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/systems/minipeptides/"
 
     def __init__(
             self,
