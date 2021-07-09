@@ -48,6 +48,18 @@ DEFAULT_Z_MATRIX = np.array([
 ])
 
 
+DEFAULT_GLOBAL_Z_MATRIX = np.row_stack([
+    DEFAULT_Z_MATRIX,
+    np.array([
+        [9, 8, 6, 14],
+        [10, 8, 14, 6],
+        [6, 8, 14, -1],
+        [8, 14, -1, -1],
+        [14, -1, -1, -1]
+    ])
+])
+
+
 class AlanineDipeptideTSF(OpenMMSystem):
     """Alanine Dipeptide from the Temperature-Steering Flows paper,
     Dibak, Klein, Noé (2020): https://arxiv.org/abs/2012.00429
