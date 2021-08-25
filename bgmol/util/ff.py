@@ -1,10 +1,11 @@
-
+import torch
 from simtk import openmm as mm
 from simtk import unit
 import numpy as np
 
 __all__ = [
-    "bond_constraints", "bond_forces", "angle_forces", "torsion_forces", "bond_parameters",
+    "bond_constraints", "bond_marginal_estimate", "angle_marginal_estimate",
+    "bond_forces", "angle_forces", "torsion_forces", "bond_parameters",
     "angle_parameters", "torsion_parameters", "torsions", "constraint_parameters",
     "lookup_bonds", "lookup_angles"
 ]
@@ -35,6 +36,58 @@ def bond_constraints(system, coordinate_transform):
     constrained_bond_indices = np.where(np.isinf(force_constants))[0]
     constrained_bond_lenghts = lengths[constrained_bond_indices]
     return constrained_bond_indices, constrained_bond_lenghts
+
+
+def bond_marginal_estimate(
+        system,
+        coordinate_transform,
+        temperature,
+        min_bond_length=0.01,
+        max_bond_length=np.infty,
+        device=torch.device("cpu"),
+        dtype=torch.get_default_dtype()
+):
+    import bgflow as bg
+    bonds = coordinate_transform.bond_indices
+    lengths, force_constants = lookup_bonds(system, bonds, temperature=temperature)
+    unconstrained_bond_indices = np.where(np.isfinite(force_constants))[0]
+    lengths = lengths[unconstrained_bond_indices]
+    force_constants = force_constants[unconstrained_bond_indices]
+    sigma = 1.0/np.sqrt(force_constants)
+    distribution = bg.TruncatedNormalDistribution(
+        mu=torch.tensor(lengths, device=device, dtype=dtype),
+        sigma=torch.tensor(sigma, device=device, dtype=dtype),
+        lower_bound=torch.tensor(min_bond_length, device=device, dtype=dtype),
+        upper_bound=torch.tensor(max_bond_length, device=device, dtype=dtype)
+    )
+    return distribution
+
+
+def angle_marginal_estimate(
+        system,
+        coordinate_transform,
+        temperature,
+        min_angle=0.05,
+        max_angle=None,
+        device=torch.device("cpu"),
+        dtype=torch.get_default_dtype()
+):
+    import bgflow as bg
+    if max_angle is None:
+        max_angle = 1.0 if coordinate_transform.normalize_angles else np.pi
+    angles = coordinate_transform.angle_indices
+    equilibria, force_constants = lookup_angles(system, angles, temperature=temperature)
+    if coordinate_transform.normalize_angles:
+        equilibria = equilibria / np.pi
+        force_constants = force_constants * np.pi**2
+    sigma = 1.0 / np.sqrt(force_constants)
+    distribution = bg.TruncatedNormalDistribution(
+        mu=torch.tensor(equilibria, device=device, dtype=dtype),
+        sigma=torch.tensor(sigma, device=device, dtype=dtype),
+        lower_bound=torch.tensor(min_angle, device=device, dtype=dtype),
+        upper_bound=torch.tensor(max_angle, device=device, dtype=dtype)
+    )
+    return distribution
 
 
 def bond_forces(system):
