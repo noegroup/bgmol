@@ -1,3 +1,4 @@
+import warnings
 import torch
 from simtk import openmm as mm
 from simtk import unit
@@ -171,13 +172,19 @@ def lookup_bonds(system, pairs, temperature):
             length.value_in_unit(unit.nanometer),
             np.inf
         )
-    lengths = np.array(
-        [bondlength_lookup[frozenset([pair[0], pair[1]])][0] for pair in pairs]
-    )
-    force_constants = np.array(
-        [bondlength_lookup[frozenset([pair[0], pair[1]])][1] for pair in pairs]
-    )
-    return lengths, force_constants
+    lengths = []
+    force_constants = []
+    for pair in pairs:
+        bond = frozenset([pair[0], pair[1]])
+        if bond in bondlength_lookup:
+            eq, k = bondlength_lookup[bond]
+            lengths.append(eq)
+            force_constants.append(k)
+        else:
+            warnings.warn(f"Bond {bond} not found in force field.", UserWarning)
+            lengths.append(0.2)
+            force_constants.append(1e-5)
+    return np.array(lengths), np.array(force_constants)
 
 
 def lookup_angles(system, angles, temperature):
@@ -186,14 +193,19 @@ def lookup_angles(system, angles, temperature):
         atom1, atom2, atom3, angle, force_constant = angle_params
         a = angle.value_in_unit(unit.radian)
         thermodynamic_beta = 1.0 / (unit.constants.MOLAR_GAS_CONSTANT_R * temperature * unit.kelvin)
-        k = (thermodynamic_beta *force_constant).value_in_unit(unit.radian**-2)
-        angle_lookup[(atom1, atom2, atom3)] = (a ,k)
-        angle_lookup[(atom3, atom2, atom1)] = (a ,k)
-    equilibria = np.array(
-        [angle_lookup[(angle[0], angle[1], angle[2])][0] for angle in angles]
-    )
-    force_constants = np.array(
-        [angle_lookup[(angle[0], angle[1], angle[2])][1] for angle in angles]
-    )
-    return equilibria, force_constants
+        k = (thermodynamic_beta * force_constant).value_in_unit(unit.radian**-2)
+        angle_lookup[(atom1, atom2, atom3)] = (a, k)
+        angle_lookup[(atom3, atom2, atom1)] = (a, k)
+    equilibria = []
+    force_constants = []
+    for angle in angles:
+        if (angle[0], angle[1], angle[2]) in angle_lookup:
+            eq, k = angle_lookup[(angle[0], angle[1], angle[2])]
+            equilibria.append(eq)
+            force_constants.append(k)
+        else:
+            warnings.warn(f"Angle {angle} not found in force field.", UserWarning)
+            equilibria.append(0.5)
+            force_constants.append(1e-5)
+    return np.array(equilibria), np.array(force_constants)
 
