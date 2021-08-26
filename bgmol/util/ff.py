@@ -48,6 +48,31 @@ def bond_marginal_estimate(
         device=torch.device("cpu"),
         dtype=torch.get_default_dtype()
 ):
+    """Estimate the marginal distribution of (unconstrained) bonds
+    from force field parameters.
+
+    Parameters
+    ----------
+    system : simtk.openmm.System
+        The openmm system that contains all information about the energy function and constraints.
+    coordinate_transform : bgflow CoordinateTransformation
+    temperature : float
+        Temperature in Kelvin.
+    min_bond_length : float, optional
+        The minimum bond length of the returned distribution.
+    max_bond_length : float, optional
+        The maximum bond length of the returned distribution.
+    device : torch.device, optional
+        The device on which the returned distribution operates.
+    dtype : torch.dtype, optional
+        The data type on which the returned distribution operates.
+
+    Returns
+    -------
+    distribution : bgflow.TruncatedNormalDistribution
+        The estimated bond marginal distribution.
+        The dimension of this distribution is the number of unconstrained bonds in the coordinate transform.
+    """
     import bgflow as bg
     bonds = coordinate_transform.bond_indices
     lengths, force_constants = lookup_bonds(system, bonds, temperature=temperature)
@@ -73,6 +98,32 @@ def angle_marginal_estimate(
         device=torch.device("cpu"),
         dtype=torch.get_default_dtype()
 ):
+    """Estimate the marginal distribution of angles
+    from force field parameters.
+
+    Parameters
+    ----------
+    system : simtk.openmm.System
+        The openmm system that contains all information about the energy function and constraints.
+    coordinate_transform : bgflow CoordinateTransformation
+    temperature : float
+        Temperature in Kelvin.
+    min_angle : float, optional
+        The minimum angle of the returned distribution.
+    max_angle : float, optional
+        The maximum angle of the returned distribution.
+    device : torch.device, optional
+        The device on which the returned distribution operates.
+    dtype : torch.dtype, optional
+        The data type on which the returned distribution operates.
+
+    Returns
+    -------
+    distribution : bgflow.TruncatedNormalDistribution
+        The estimated marginal distribution of angles.
+        If the coordinate transform produces normalized angles in [0,1],
+        the marginal distribution will produce normalized angles, too.
+    """
     import bgflow as bg
     if max_angle is None:
         max_angle = 1.0 if coordinate_transform.normalize_angles else np.pi
@@ -156,7 +207,8 @@ def lookup_bonds(system, pairs, temperature):
     lengths : np.ndarray
         bond lengths in nanometers
     force_constants : np.ndarray
-        dimensionless bond force constants in kBT
+        dimensionless bond force constants in kBT;
+        any constrained bond is assigned an infinte force constant.
     """
     bondlength_lookup = {}
     for bond_params in bond_parameters(system):
@@ -188,6 +240,25 @@ def lookup_bonds(system, pairs, temperature):
 
 
 def lookup_angles(system, angles, temperature):
+    """Parse the equilibrium angles and force constants of specified angles
+    from a simtk.openmm.System.
+
+    Parameters
+    ----------
+    system : simtk.openmm.System
+        The system object that contains all potential and constraint definitions.
+    pairs : np.ndarray
+        Atom ids of the bonds of shape (n_bonds_to_look_up, 2).
+    temperature : float
+        Temperature in Kelvin.
+
+    Returns
+    -------
+    equilibria : np.ndarray
+        equilibrium angles in radians
+    force_constants : np.ndarray
+        dimensionless force constants in kBT
+    """
     angle_lookup = {}
     for angle_params in angle_parameters(system):
         atom1, atom2, atom3, angle, force_constant = angle_params
