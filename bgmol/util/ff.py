@@ -1,4 +1,7 @@
 import warnings
+from typing import Sequence
+
+import simtk.unit
 import torch
 from simtk import openmm as mm
 from simtk import unit
@@ -79,7 +82,7 @@ def bond_marginal_estimate(
     unconstrained_bond_indices = np.where(np.isfinite(force_constants))[0]
     lengths = lengths[unconstrained_bond_indices]
     force_constants = force_constants[unconstrained_bond_indices]
-    sigma = 1.0/np.sqrt(force_constants)
+    sigma = 1.0 / np.sqrt(force_constants)
     distribution = bg.TruncatedNormalDistribution(
         mu=torch.tensor(lengths, device=device, dtype=dtype),
         sigma=torch.tensor(sigma, device=device, dtype=dtype),
@@ -142,6 +145,77 @@ def angle_marginal_estimate(
     return distribution
 
 
+def torsion_marginal_icdf_estimate(
+        system,
+        coordinate_transform,
+        temperature,
+        n_bins=64,
+        device=torch.device("cpu"),
+        dtype=torch.get_default_dtype()
+):
+    pass
+
+
+def torsion_energies_from_ff_parameters(
+        system,
+        coordinate_transform,
+        temperature,
+        discrete_torsions=64,
+):
+    if isinstance(discrete_torsions, int):
+        discrete_torsions = np.linspace(-np.pi, np.pi, n_bins)
+    torsions = coordinate_transform.torsion_indices
+    periodicities, phases, force_constants, chargeprods, sigmas, epsilons = lookup_torsions(system, torsions, temperature)
+
+    # compute 1-4 distances
+    d12, _ = lookup_bonds(system, torsions[:, :2], temperature=temperature)
+    d23, _ = lookup_bonds(system, torsions[:, 1:3], temperature=temperature)
+    d34, _ = lookup_bonds(system, torsions[:, 2:], temperature=temperature)
+    a123, _ = lookup_angles(system, torsions[:, :3], temperature=temperature)
+    a234, _ = lookup_angles(system, torsions[:, 1:], temperature=temperature)
+
+    distances14 = _torsions_to_distances14(
+        discrete_torsions,
+        bonds=np.stack([d12, d23, d34], axis=-1),
+        angles=np.stack([a123, a234], axis=-1)
+    )
+
+    energies = evaluate_torsion_potential(
+        torsions=discrete_torsions,
+        distances14=distances14,
+        periodicities=periodicities,
+        phases=phases,
+        force_constants=force_constants,
+        chargeprods=chargeprods,
+        sigmas=sigmas,
+        epsilons=epsilons
+    )
+    return energies
+
+
+def _torsions_to_distances14(torsions, bonds, angles):
+    from bgflow import GlobalInternalCoordinateTransformation
+    with torch.no_grad():
+        ictrafo = GlobalInternalCoordinateTransformation(
+            z_matrix=np.array([[0, -1, -1, -1], [1, 0, -1, -1], [2, 1, 0, -1], [3, 2, 1, 0], ]),
+            normalize_angles=False
+        )
+        bonds = torch.tensor(bonds)
+        angles = torch.tensor(angles)
+        n_torsions = len(torsions)
+        r, dlogp = ictrafo.forward(
+            bonds.repeat(n_torsions, 1),
+            angles.repeat(n_torsions, 1),
+            torch.tensor(torsions[:, None]),
+            x0=torch.zeros((n_torsions, 1, 3)),
+            R=torch.zeros((n_torsions, 3)),
+            inverse=True
+        )
+        r = r.reshape(-1, 4, 3)
+        distances14 = torch.linalg.norm(r[:, 0, :] - r[:, 3, :], dim=-1)
+        return distances14.numpy()
+
+
 def bond_forces(system):
     for f in system.getForces():
         if isinstance(f, mm.HarmonicBondForce):
@@ -160,6 +234,12 @@ def torsion_forces(system):
             yield f
 
 
+def nonbonded_forces(system):
+    for f in system.getForces():
+        if isinstance(f, mm.NonbondedForce):
+            yield f
+
+
 def bond_parameters(system):
     for f in bond_forces(system):
         for i in range(f.getNumBonds()):
@@ -175,18 +255,83 @@ def angle_parameters(system):
 def torsion_parameters(system):
     for f in torsion_forces(system):
         for i in range(f.getNumTorsions()):
-            yield f.getTorsionParameters(i)
+            p1, p2, p3, p4, period, phase, k = f.getTorsionParameters(i)
+            yield p1, p2, p3, p4, period, phase, k
+            yield p4, p3, p2, p1, period, phase, k
 
 
 def torsions(system):
     for t in torsion_parameters(system):
         yield (t[:4])
-        yield (t[3::-1])
 
 
 def constraint_parameters(system):
     for i in range(system.getNumConstraints()):
         yield system.getConstraintParameters(i)
+
+
+def exception_parameters(nonbonded_force : mm.NonbondedForce):
+    assert nonbonded_force.getNumExceptionParameterOffsets() == 0
+    for i in range(nonbonded_force.getNumExceptions()):
+        p1, p2, *params = nonbonded_force.getExceptionParameters(i)
+        yield (p1, p2, *params)
+        yield (p2, p1, *params)
+
+
+def nonbonded_parameters(
+        system : mm.System,
+        pairs : Sequence[Sequence[int]]
+):
+    # only implement it for one nonbonded force right now
+    nbforces = list(nonbonded_forces(system))
+    assert len(nbforces) <= 1
+    if len(nbforces) == 0:
+        return
+
+    nbforce = nbforces[0]
+    # non-mixed 1-4 interactions
+    exceptions = {
+        frozenset([p1, p2]): (qq, sigma, epsilon)
+        for p1, p2, qq, sigma, epsilon in exception_parameters(nbforce)
+    }
+    for pair in pairs:
+        pair = [int(pair[0]), int(pair[1])]
+        if frozenset(pair) in exceptions:
+            qq, sigma, epsilon = exceptions[frozenset(pair)]
+        else:
+            # mixing rules
+            q1, s1, e1 = nbforce.getParticleParameters(pair[0])
+            q2, s2, e2 = nbforce.getParticleParameters(pair[1])
+            qq = q1*q2
+            sigma = 0.5 * (s1 + s2)
+            epsilon = np.sqrt(e1 * e2)
+        yield qq, sigma, epsilon
+
+
+def evaluate_torsion_potential(
+        torsions, distances14, periodicities, phases,
+        force_constants, chargeprods, sigmas, epsilons
+):
+    cosines = evaluate_raw_torsion_potential(torsions, periodicities, phases, force_constants)
+    nonbonded_14 = evaluate_14_potential(distances14, chargeprods, sigmas, epsilons)
+    assert cosines.shape == nonbonded_14.shape
+    return cosines + nonbonded_14
+
+
+def evaluate_raw_torsion_potential(torsions, periodicities, phases, force_constants):
+    terms = (
+            force_constants[...,None] *
+            (1.0 + np.cos(periodicities[...,None] * torsions - phases[...,None]))
+    )
+    # shape (... batch idxs ..., n_torsions, N_MAX_COSINE_TERMS, n_bins)
+    return terms.sum(-2)
+
+
+def evaluate_14_potential(distances, chargeprods, sigmas, epsilons):
+    sig_by_r6 = (sigmas[...,None]/distances)**6
+    lj14 = 4 * epsilons[...,None] * (sig_by_r6**2 - sig_by_r6)
+    coulomb14 = chargeprods[...,None] / distances
+    return lj14 + coulomb14
 
 
 def lookup_bonds(system, pairs, temperature):
@@ -247,8 +392,8 @@ def lookup_angles(system, angles, temperature):
     ----------
     system : simtk.openmm.System
         The system object that contains all potential and constraint definitions.
-    pairs : np.ndarray
-        Atom ids of the bonds of shape (n_bonds_to_look_up, 2).
+    angles : np.ndarray
+        Atom ids of the angles of shape (n_bonds_to_look_up, 3).
     temperature : float
         Temperature in Kelvin.
 
@@ -279,4 +424,64 @@ def lookup_angles(system, angles, temperature):
             equilibria.append(0.5)
             force_constants.append(1e-5)
     return np.array(equilibria), np.array(force_constants)
+
+
+N_MAX_TORSION_TERMS = 6
+
+
+def lookup_torsions(
+        system,
+        torsions,
+        temperature
+):
+    """
+    Parameters
+    ----------
+    system
+    torsions
+    temperature
+
+    Returns
+    -------
+
+    """
+    torsion_lookup = dict()
+    nb_pairs = []
+    for p1, p2, p3, p4, period, phase, k in torsion_parameters(system):
+        torsion = (p1, p2, p3, p4)
+        if torsion in torsion_lookup:
+            torsion_lookup[torsion].append([[period, phase, k]])
+        else:
+            torsion_lookup[torsion] = [[period, phase, k]]
+        nb_pairs.append([p1, p4])
+
+    # cos-type interactions
+    periodicities = np.zeros((len(torsions), N_MAX_TORSION_TERMS), dtype=int)
+    phases = np.zeros((len(torsions), N_MAX_TORSION_TERMS))
+    force_constants = np.zeros((len(torsions), N_MAX_TORSION_TERMS))
+
+    thermodynamic_beta = 1.0 / (unit.constants.MOLAR_GAS_CONSTANT_R * temperature * unit.kelvin)
+    for i, torsion in enumerate(torsions):
+        parameters = torsion_lookup.get(tuple(torsion), [])
+        for j, (period, phase, k) in enumerate(parameters):
+            periodicities[i, j] = period
+            phases[i, j] = phase.value_in_unit(unit.radian)
+            force_constants[i, j] = thermodynamic_beta * k
+
+    # 1-4 interactions
+    chargeprods = np.zeros(len(torsions))
+    sigmas = np.zeros(len(torsions))
+    epsilons = np.zeros(len(torsions))
+    ONE_4PI_EPS0 = 138.935456
+    #vacuum_permittivity = (8.8541878128e-12 * unit.farad / unit.meter)
+
+    nonbonds = nonbonded_parameters(system, [[p1, p4] for p1, _, _, p4, *_ in torsions])
+    for i, (qq, sigma, epsilon) in enumerate(nonbonds):
+        #qq = thermodynamic_beta * qq / (4 * np.pi * vacuum_permittivity) * unit.AVOGADRO_CONSTANT_NA
+        qq = ONE_4PI_EPS0 * qq.value_in_unit(unit.elementary_charge**2) * unit.kilojoule_per_mole
+        chargeprods[i] = thermodynamic_beta * qq
+        sigmas[i] = sigma.value_in_unit(unit.nanometer)
+        epsilons[i] = (thermodynamic_beta * epsilon)
+
+    return periodicities, phases, force_constants, chargeprods, sigmas, epsilons
 
