@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from bgmol.util.ff import (
     bond_parameters, bond_constraints, bond_marginal_estimate, angle_marginal_estimate,
-    torsion_marginal_icdf_estimate, N_MAX_TORSION_TERMS, lookup_torsions,
+    torsion_marginal_cdf_estimate, N_MAX_TORSION_TERMS, lookup_torsions,
     torsion_energies_from_ff_parameters
 )
 from bgmol.systems.ala2 import DEFAULT_GLOBAL_Z_MATRIX
@@ -149,9 +149,22 @@ def test_torsion_energies():
     #print(np.array([eval_mm(t, groups={11}) for t in discrete_torsions]))
     mm_energies = np.array([eval_mm(t) for t in discrete_torsions])
     mm_energies -= mm_energies.min()
-    energies = torsion_energies_from_ff_parameters(basic_system, ictrafo, 300., discrete_torsions)
+    energies = torsion_energies_from_ff_parameters(basic_system, ictrafo, 300., discrete_torsions[None, :])
     energies -= energies.min()
     assert energies.shape == (1, n_bins)
     assert np.allclose(energies[0], mm_energies)
 
 
+@pytest.mark.parametrize("normalize", [True, False])
+def test_torsion_marginal_estimate(ala2dataset, ctx, normalize):
+    crd_trafo = GlobalInternalCoordinateTransformation(
+        DEFAULT_GLOBAL_Z_MATRIX, normalize_angles=normalize
+    ).to(**ctx)
+    estimate = torsion_marginal_cdf_estimate(ala2dataset.system.system, crd_trafo, 300.).to(**ctx)
+
+    _, _, torsions, *_ = crd_trafo.forward(torch.tensor(ala2dataset.xyz, **ctx).reshape(-1, 66))
+    tol = 0.1 if normalize else np.pi * 0.1
+    uniform = estimate.forward(torsions)[0]
+    assert torch.allclose(uniform.mean(dim=0), 0.5 * torch.ones_like(uniform[0]), atol=0.35)
+    assert torch.all(uniform.min(dim=0).values >= 0.)
+    assert torch.all(uniform.max(dim=0).values <= 1.)

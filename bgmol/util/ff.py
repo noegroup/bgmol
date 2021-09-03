@@ -11,7 +11,8 @@ __all__ = [
     "bond_constraints", "bond_marginal_estimate", "angle_marginal_estimate",
     "bond_forces", "angle_forces", "torsion_forces", "bond_parameters",
     "angle_parameters", "torsion_parameters", "torsions", "constraint_parameters",
-    "lookup_bonds", "lookup_angles"
+    "lookup_bonds", "lookup_angles", "torsion_energies_from_ff_parameters",
+    "torsion_marginal_cdf_estimate"
 ]
 
 
@@ -145,25 +146,66 @@ def angle_marginal_estimate(
     return distribution
 
 
-def torsion_marginal_icdf_estimate(
+def torsion_marginal_cdf_estimate(
         system,
         coordinate_transform,
         temperature,
-        n_bins=64,
+        discrete_torsions=64,
         device=torch.device("cpu"),
-        dtype=torch.get_default_dtype()
+        dtype=torch.get_default_dtype(),
+        method="ff", # "scan",
+        max_energy=1e3 # in kT,
 ):
-    pass
+    """discrete_torsions can be an int or an array of floats"""
+    if isinstance(discrete_torsions, int):
+        discrete_torsions = np.linspace(-np.pi, np.pi, discrete_torsions + 1)
+    if isinstance(discrete_torsions, np.ndarray):
+        if len(discrete_torsions.shape) == 1:
+            discrete_torsions = np.tile(discrete_torsions, [coordinate_transform.dim_torsions, 1])
+    assert len(discrete_torsions.shape) == 2
+    assert np.allclose(discrete_torsions[:, 0], - np.pi * np.ones_like(discrete_torsions[:, 0]))
+    assert np.allclose(discrete_torsions[:, -1], np.pi * np.ones_like(discrete_torsions[:, 0]))
+    assert discrete_torsions.shape[0] == coordinate_transform.dim_torsions
+
+    if method == "ff":
+        energies = torsion_energies_from_ff_parameters(system, coordinate_transform, temperature, discrete_torsions)
+    else:
+        raise NotImplementedError(f"Method {method} not implemented for torsion_marginal_icdf_estimate")
+
+    # clip and normalize energies, so that \int e^(-u) = 1
+    energies = torch.tensor(energies)
+    energies = energies - energies.min(dim=-1, keepdim=True).values
+    energies = energies.clip(0, max_energy)
+    marginal_free_energy = - torch.logsumexp(-energies[...,:-1], dim=-1, keepdim=True)
+    energies -= marginal_free_energy
+    # check that energies are normalized
+    assert torch.allclose(torch.logsumexp(-energies[...,:-1], dim=-1), torch.zeros_like(energies[..., 0]), atol=1e-3)
+
+    support_points = torch.tensor(discrete_torsions)
+    if coordinate_transform.normalize_angles:
+        support_points = (support_points + np.pi) / (2*np.pi)
+    probabilities = torch.exp(- 0.5 * (energies[..., 1:] + energies[..., :-1]))  # midpoint rule
+    probabilities = torch.cat([torch.zeros_like(probabilities[:,[0]]), probabilities], dim=-1)
+    support_values = torch.cumsum(probabilities, dim=-1)
+    slopes = torch.exp(-energies)
+
+    assert support_points.shape == (coordinate_transform.dim_torsions,  discrete_torsions.shape[-1])
+    assert support_values.shape == (coordinate_transform.dim_torsions, discrete_torsions.shape[-1])
+    assert slopes.shape == (coordinate_transform.dim_torsions,  discrete_torsions.shape[-1])
+
+    from bgflow.nn.flow.spline import PeriodicTabulatedTransform
+    cdf = PeriodicTabulatedTransform(support_points, support_values, slopes)
+    return cdf.to(device=device, dtype=dtype)
 
 
 def torsion_energies_from_ff_parameters(
         system,
         coordinate_transform,
         temperature,
-        discrete_torsions=64,
+        discrete_torsions,
 ):
-    if isinstance(discrete_torsions, int):
-        discrete_torsions = np.linspace(-np.pi, np.pi, n_bins)
+    # discrete_torsions has shape (n_torsions, n_discrete_torsions)
+
     torsions = coordinate_transform.torsion_indices
     periodicities, phases, force_constants, chargeprods, sigmas, epsilons = lookup_torsions(system, torsions, temperature)
 
@@ -173,6 +215,7 @@ def torsion_energies_from_ff_parameters(
     d34, _ = lookup_bonds(system, torsions[:, 2:], temperature=temperature)
     a123, _ = lookup_angles(system, torsions[:, :3], temperature=temperature)
     a234, _ = lookup_angles(system, torsions[:, 1:], temperature=temperature)
+
 
     distances14 = _torsions_to_distances14(
         discrete_torsions,
@@ -202,18 +245,33 @@ def _torsions_to_distances14(torsions, bonds, angles):
         )
         bonds = torch.tensor(bonds)
         angles = torch.tensor(angles)
-        n_torsions = len(torsions)
+        torsions = torch.tensor(torsions)
+        n_torsions = len(bonds)
+        assert bonds.shape == (n_torsions, 3)
+        assert angles.shape == (n_torsions, 2)
+        assert len(torsions.shape) in {1, 2}
+        n_discrete_torsions = torsions.shape[-1]
+        if len(torsions.shape) == 1:
+            # all torsions have the same discretization
+            torsions = torsions[None, :, None].repeat(n_torsions, 1, 1)
+        else:
+            torsions = torsions[..., None]
+        bonds = bonds[:, None, :].repeat(1, n_discrete_torsions, 1)
+        angles = angles[:, None, :].repeat(1, n_discrete_torsions, 1)
+        assert bonds.shape == (n_torsions, n_discrete_torsions, 3)
+        assert angles.shape == (n_torsions, n_discrete_torsions, 2)
+        assert torsions.shape == (n_torsions, n_discrete_torsions, 1)
         r, dlogp = ictrafo.forward(
-            bonds.repeat(n_torsions, 1),
-            angles.repeat(n_torsions, 1),
-            torch.tensor(torsions[:, None]),
-            x0=torch.zeros((n_torsions, 1, 3)),
-            R=torch.zeros((n_torsions, 3)),
+            bonds.reshape(-1, 3),
+            angles.reshape(-1, 2),
+            torsions.reshape(-1, 1),
+            x0=torch.zeros((n_discrete_torsions * n_torsions, 1, 3)),
+            R=0.5*torch.ones((n_discrete_torsions * n_torsions, 3)),
             inverse=True
         )
         r = r.reshape(-1, 4, 3)
         distances14 = torch.linalg.norm(r[:, 0, :] - r[:, 3, :], dim=-1)
-        return distances14.numpy()
+        return distances14.reshape(n_torsions, n_discrete_torsions).numpy()
 
 
 def bond_forces(system):
@@ -319,12 +377,15 @@ def evaluate_torsion_potential(
 
 
 def evaluate_raw_torsion_potential(torsions, periodicities, phases, force_constants):
+    # torsions has shape (n_torsions_in_system, n_discrete_torsions)
+    # periodicities, phases, force constants have shape (n_torsions_in_system, N_MAX_COSINE_TERMS)
     terms = (
-            force_constants[...,None] *
-            (1.0 + np.cos(periodicities[...,None] * torsions - phases[...,None]))
+            force_constants[:, None, :] *
+            (1.0 + np.cos(periodicities[:, None, :] * torsions[:, :, None] - phases[:, None, :]))
     )
+    # shape (n_torsions_in_system, n_discrete_torsions, N_MAX_COSINE_TERMS)
     # shape (... batch idxs ..., n_torsions, N_MAX_COSINE_TERMS, n_bins)
-    return terms.sum(-2)
+    return terms.sum(-1)
 
 
 def evaluate_14_potential(distances, chargeprods, sigmas, epsilons):
@@ -450,7 +511,7 @@ def lookup_torsions(
     for p1, p2, p3, p4, period, phase, k in torsion_parameters(system):
         torsion = (p1, p2, p3, p4)
         if torsion in torsion_lookup:
-            torsion_lookup[torsion].append([[period, phase, k]])
+            torsion_lookup[torsion].append([period, phase, k])
         else:
             torsion_lookup[torsion] = [[period, phase, k]]
         nb_pairs.append([p1, p4])
