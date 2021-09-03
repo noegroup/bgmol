@@ -175,7 +175,7 @@ def torsion_marginal_cdf_estimate(
     # clip and normalize energies, so that \int e^(-u) = 1
     energies = torch.tensor(energies)
     energies = energies - energies.min(dim=-1, keepdim=True).values
-    energies = energies.clip(0, max_energy)
+    energies = energies.clip(0, 20)
     marginal_free_energy = - torch.logsumexp(-energies[...,:-1], dim=-1, keepdim=True)
     energies -= marginal_free_energy
     # check that energies are normalized
@@ -186,6 +186,7 @@ def torsion_marginal_cdf_estimate(
         support_points = (support_points + np.pi) / (2*np.pi)
     probabilities = torch.exp(- 0.5 * (energies[..., 1:] + energies[..., :-1]))  # midpoint rule
     probabilities = torch.cat([torch.zeros_like(probabilities[:,[0]]), probabilities], dim=-1)
+    probabilities /= probabilities.sum(dim=-1, keepdim=True)
     support_values = torch.cumsum(probabilities, dim=-1)
     slopes = torch.exp(-energies)
 
