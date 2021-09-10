@@ -176,25 +176,29 @@ class ZMatrixFactory:
 
         # build residues
         for i, residue in enumerate(self.top.residues):
+            
             is_nterm = (i == 0) and residue.is_protein
             is_cterm = ((i + 1) == self.top.n_residues) and residue.is_protein
 
             resatoms = {a.name: a.index for a in residue.atoms}
             resname = residue.name
+            print('resname', resname)
             for entry in templates[resname]:  # template entry:
+                print('entry', entry)
                 if not self._is_placed(resatoms[entry[0]]):  # not in not_ic:
                     self._z.append([resatoms[_e] for _e in entry])
 
-            if is_nterm:
+            if is_nterm and False:
                 # set two additional N-term protons
                 if "H2" in resatoms and not self._is_placed(resatoms["H2"]):  # not in not_ic:
                     self._z.append([resatoms["H2"], resatoms["N"], resatoms["CA"], resatoms["H"]])
                 if "H3" in resatoms and not self._is_placed(resatoms["H3"]):  # not in not_ic:
                     self._z.append([resatoms["H3"], resatoms["N"], resatoms["CA"], resatoms["H2"]])
-            elif is_cterm:
+            elif is_cterm and False:
                 # place OXT
                 if "OXT" in resatoms and not self._is_placed(resatoms["OXT"]):  # not in not_ic:
                     self._z.append([resatoms["OXT"], resatoms["C"], resatoms["CA"], resatoms["O"]])
+            #print(self._z)
 
         # append missing
         placed = np.array(list(self._placed_atoms()))
@@ -204,6 +208,7 @@ class ZMatrixFactory:
                 f"{np.setdiff1d(np.arange(self.top.n_atoms), placed)}"
             )
             self.build_naive(subset)
+        
         return self.z_matrix, self.fixed
 
     def _load_template(self, yaml_file):
