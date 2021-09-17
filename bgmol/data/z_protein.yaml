@@ -117,10 +117,28 @@ GLY:
   - ["HA2", "CA", "N", "C"]
   - ["HA3", "CA", "C", "N"]
 
-TRP:
+TRP: 
   - ["H", "N", "CA", "C"]
   - ["O", "C", "CA", "N"]
   - ["HA", "CA", "N", "C"]
+  - ["CB", "CA", "N", "C"] 
+  - ["CG", "CB", "CA", "N"]
+  - ["CD1", "CG", "CB", "CA"]
+  - ["NE1", "CD1", "CG", "CB"]
+  - ["CE2", "NE1", "CD1", "CG"]
+  - ["CD2", "CG", "CE2", "CB"]
+  - ["CE3", "CD2", "CG", "CE2"]
+  - ["CZ3", "CE3", "CD2", "CG"]
+  - ["CZ2", "CE2", "NE1", "CD2"]
+  - ["CH2", "CZ3", "CZ2", "CE3"]
+  - ["HB1", "CB", "CA", "CG"]
+  - ["HB2", "CB", "CA", "CG"]
+  - ["HD1", "CD1", "CG", "NE1"]
+  - ["HE1", "NE1", "CD1", "CE2"]
+  - ["HE3", "CE3", "CD2", "CZ3"]
+  - ["HZ3", "CZ3", "CE3", "CH2"]
+  - ["HZ2", "CZ2", "CE2", "CH2"]
+  - ["HH2", "CH2", "CZ3", "CZ2"]
 
 TYR:
   - ["H", "N", "CA", "C"]
