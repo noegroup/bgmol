@@ -1,5 +1,5 @@
-from simtk import unit
-from simtk.openmm import app
+from bgmol.util.importing import import_openmm
+_, unit, app = import_openmm()
 from bgmol.systems.base import OpenMMSystem
 from bgmol.util import get_data_file
 

@@ -4,9 +4,9 @@ YAML utilities
 
 import yaml
 from mdtraj.utils.unit import _str_to_unit
-from simtk import unit
-from simtk.openmm import app
-from simtk.openmm.app.internal.singleton import Singleton
+
+from bgmol.util.importing import import_openmm
+mm, unit, app = import_openmm()
 
 
 __all__ = [
@@ -53,17 +53,17 @@ def quantity_constructor(loader, node):
 
 _OPENMM_SINGLETONS = [
     object for object in app.__dict__.values()
-    if isinstance(object, Singleton)
+    if isinstance(object, app.internal.singleton.Singleton)
 ]
 
 
 def singleton_representer(dumper, data):
-    """Converts simtk.openmm.app.internal.Singleton object into a yaml string."""
+    """Converts openmm.app.internal.Singleton object into a yaml string."""
     return dumper.represent_scalar('!openmm', data.__class__.__name__)
 
 
 def singleton_constructor(loader, node):
-    """Parser for simtk.openmm.app.internal.Singleton objects from yaml file."""
+    """Parser for openmm.app.internal.Singleton objects from yaml file."""
     string = loader.construct_scalar(node)
     return getattr(app, string)
 
@@ -71,7 +71,7 @@ def singleton_constructor(loader, node):
 def yaml_dump(data, stream):
     """A version of yaml.dump with custom representers."""
     yaml.add_representer(unit.Quantity, quantity_representer)
-    yaml.add_multi_representer(Singleton, singleton_representer)
+    yaml.add_multi_representer(app.internal.singleton.Singleton, singleton_representer)
     yaml.dump(data, stream)
 
 

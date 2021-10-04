@@ -4,7 +4,9 @@ import pytest
 import shutil
 
 import numpy as np
-from simtk.openmm import Context, VerletIntegrator, Platform
+from bgmol.util.importing import import_openmm
+_, unit, _ = import_openmm()
+
 from bgmol import datasets
 from bgmol.api import list_datasets
 
@@ -39,10 +41,10 @@ def test_all_datasets(all_datasets):
         for i in range(num_comparisons):
             random_frame = np.random.randint(0, dataset.num_frames)
             # check energy/force for a random frame
-            context = Context(
+            context = mm.Context(
                 system.system,
-                VerletIntegrator(0.001),
-                Platform.getPlatformByName("Reference")
+                mm.VerletIntegrator(0.001),
+                mm.Platform.getPlatformByName("Reference")
             )
             context.setPositions(dataset.xyz[random_frame])
             if dataset.unitcell_vectors is not None:
