@@ -3,7 +3,9 @@ import numpy as np
 from bgmol.datasets.base import DataSet
 from bgmol.api import system_by_name
 from bgmol.tpl.hdf5 import HDF5TrajectoryFile, load_hdf5
-import pickle
+import pickle5 as pickle
+from mdtraj import load_dcd
+
 
 __all__ = ["ArrestinActive", "ArrestinInactive"]
 
@@ -25,15 +27,19 @@ class ArrestinActive(DataSet):
         super(ArrestinActive, self).__init__(root=root)
         self._system = system_by_name("ArrestinActive")
         self._temperature = 310
-        name = 'arr2-active_coordinates'
-        with open(name + '.pkl', 'rb') as f:
-            coords = pickle.load(f)
-            self._xyz = coords
+#        name = 'arr2-active_coordinates'
+#        with open(name + '.pkl', 'rb') as f:
+#            coords = pickle.load(f)
+#            self._xyz = coords
+
+    @property
+    def trajectory_file(self):
+        return os.path.join(self.root, "openmm-arrestin/arr2-active_output.dcd")
 
     def read(self):
-#        self.trajectory = load_dcd(self.trajectory_file)
-        energy_logfile = 'arr2-active_log.txt'
-        self._energies = np.loadtxt(energy_logfile, delimiter=',')[:,1]
+        self.trajectory = load_dcd(self.trajectory_file, top=self._system.mdtraj_topology)
+        #energy_logfile = 'arr2-active_log.txt'
+        #self._energies = np.loadtxt(energy_logfile, delimiter=',')[:,1]
 #        self._forces = np.loadtxt(force_logfile, delimiter=',')[:,1]
        
 

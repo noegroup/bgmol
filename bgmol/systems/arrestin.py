@@ -5,7 +5,7 @@ from simtk.openmm import app
 import mdtraj as md
 from ..systems.base import OpenMMToolsTestSystem, OpenMMSystem
 from torchvision.datasets.utils import download_url
-import pickle
+import pickle5 as pickle
 
 
 __all__ = ["ArrestinActive", "ArrestinInactive"]

@@ -215,7 +215,7 @@ class ZMatrixFactory:
         filename_in_pkg = os.path.join(self.TEMPLATE_LOOKUP_DIR, yaml_file)
         if os.path.isfile(filename_in_pkg):
             if os.path.isfile(yaml_file) and os.path.normpath(yaml_file) != os.path.normpath(filename_in_pkg):
-                raise warnings.warn(
+                warnings.warn(
                     f"{yaml_file} exists locally and in the package templates. "
                     f"Taking the built-in one from the bgmol package.", UserWarning
                 )
