@@ -10,7 +10,8 @@ from mdtraj.testing import eq
 import pytest
 
 try:
-    from simtk import unit as units
+    from bgmol.util.importing import import_openmm
+    _, units, _ = import_openmm()
     HAVE_UNITS = True
 except ImportError:
     HAVE_UNITS = False

@@ -2,9 +2,8 @@
 import os
 import numpy as np
 
-from simtk import unit
-from simtk.openmm.app import HBonds
-from simtk.openmm import LangevinIntegrator, Platform
+from bgmol.util.importing import import_openmm
+mm, unit, app = import_openmm()
 
 from .base import DataSet
 from ..systems.minipeptides import MiniPeptide
@@ -114,7 +113,7 @@ class ASolvatedAmber99(DataSet):
             solvated=True,
             forcefield=["amber99sbildn.xml", "tip3p.xml"],
             nonbonded_cutoff=0.9 * unit.nanometer,
-            constraints=HBonds,
+            constraints=app.HBonds,
             hydrogen_mass=4 * unit.amu
         )
         self._temperature = 300.
@@ -177,11 +176,11 @@ class AImplicitUnconstrained(DataSet):
 
     @property
     def integrator(self):
-        integrator = LangevinIntegrator(self.temperature * unit.kelvin, 1.0 / unit.picosecond, 1.0 * unit.femtosecond)
+        integrator = mm.LangevinIntegrator(self.temperature * unit.kelvin, 1.0 / unit.picosecond, 1.0 * unit.femtosecond)
         return integrator
 
     @property
     def platform(self):
-        platform = Platform.getPlatformByName("CUDA")
+        platform = mm.Platform.getPlatformByName("CUDA")
         platform.setPropertyDefaultValue("Precision", "mixed")
         return platform

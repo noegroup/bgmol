@@ -2,7 +2,8 @@ import pytest
 import warnings
 import numpy as np
 import torch
-from simtk import unit
+from bgmol.util.importing import import_openmm
+_, unit, _ = import_openmm()
 from bgmol.systems import ImplicitBPTI, AlanineDipeptideImplicit, ChignolinC22Implicit
 from bgmol.zmatrix import ZMatrixFactory, build_fake_topology
 from bgflow import (

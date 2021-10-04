@@ -1,7 +1,9 @@
 
 import numpy as np
-from simtk.openmm import LangevinIntegrator, Platform
-from simtk.openmm.app import Simulation
+
+from bgmol.util.importing import import_openmm
+mm, unit, app = import_openmm()
+
 from bgmol.util.constraints import project_forces_onto_constraints, _get_constraints, _get_masses
 
 

@@ -3,8 +3,9 @@
 
 import io
 
-from simtk import openmm, unit
-from simtk.openmm import app
+from ..util.importing import import_openmm
+mm, unit, app = import_openmm()
+
 import numpy as np
 
 from bgmol.util import yaml_dump, BGMolException
@@ -60,7 +61,7 @@ class BaseSystem:
     def _validate_parameter_type(value):
         """Allow only some types for parameters."""
         if isinstance(value, app.internal.singleton.Singleton):
-            # allow openmm.app.HBonds, ...
+            # allow mm.app.HBonds, ...
             return
         if not type(value) in [type(None), bool, str, float, int, list, dict, unit.Quantity, tuple]:
             raise BGMolException(
@@ -83,12 +84,12 @@ class BaseSystem:
 
 class OpenMMSystem(BaseSystem):
     """
-    The implementation is based on the openmmtools.TestSystem class.
+    The implementation is based on the openmmtoolsTestSystem class.
     It adds storing parameters in order to construct the testsystem from a compact yaml file.
 
     Attributes
     ----------
-    system : simtk.openmm.System
+    system : openmm.System
         System object for the test system
     positions : list
         positions of test system
@@ -102,7 +103,7 @@ class OpenMMSystem(BaseSystem):
         """
         super(OpenMMSystem, self).__init__()
         # Create an empty system object.
-        self._system = openmm.System()
+        self._system = mm.System()
 
         # Store positions.
         self._positions = unit.Quantity(np.zeros([0, 3], np.float), unit.nanometers)
@@ -116,7 +117,7 @@ class OpenMMSystem(BaseSystem):
 
     @property
     def system(self):
-        """The simtk.openmm.System object corresponding to the test system."""
+        """The openmm.System object corresponding to the test system."""
         return self._system
 
     @system.setter
@@ -130,8 +131,8 @@ class OpenMMSystem(BaseSystem):
     @property
     def positions(self):
         """particle positions
-        The simtk.unit.Quantity object containing the particle positions,
-        with units compatible with simtk.unit.nanometers."""
+        The openmm.unit.Quantity object containing the particle positions,
+        with units compatible with openmm.unit.nanometers."""
         return self._positions
 
     @property
@@ -148,7 +149,7 @@ class OpenMMSystem(BaseSystem):
 
     @property
     def topology(self):
-        """The simtk.openmm.app.Topology object corresponding to the test system."""
+        """The openmm.app.Topology object corresponding to the test system."""
         return self._topology
 
     @topology.setter
@@ -185,24 +186,21 @@ class OpenMMSystem(BaseSystem):
             Serialized XML form of State object containing particle positions.
 
         """
-
-        from simtk.openmm import XmlSerializer
-
         # Serialize System.
-        system_xml = XmlSerializer.serialize(self._system)
+        system_xml = mm.XmlSerializer.serialize(self._system)
 
         # Serialize positions via State.
         if self._system.getNumParticles() == 0:
             # Cannot serialize the State of a system with no particles.
             state_xml = None
         else:
-            platform = openmm.Platform.getPlatformByName('Reference')
-            integrator = openmm.VerletIntegrator(1.0 * unit.femtoseconds)
-            context = openmm.Context(self._system, integrator, platform)
+            platform = mm.Platform.getPlatformByName('Reference')
+            integrator = mm.VerletIntegrator(1.0 * unit.femtoseconds)
+            context = mm.Context(self._system, integrator, platform)
             context.setPositions(self._positions)
             state = context.getState(getPositions=True)
             del context, integrator
-            state_xml = XmlSerializer.serialize(state)
+            state_xml = mm.XmlSerializer.serialize(state)
         return system_xml, state_xml
 
     def reinitialize_energy_model(self, temperature=300, **kwargs):
@@ -210,8 +208,8 @@ class OpenMMSystem(BaseSystem):
         if "integrator" in kwargs:
             integrator = kwargs["integrator"]
         else:
-            integrator = openmm.LangevinIntegrator(temperature, 1., 0.002)
-        from bgflow.distribution.energy.openmm import OpenMMBridge, OpenMMEnergy
+            integrator = mm.LangevinIntegrator(temperature, 1., 0.002)
+        from bgflow.distribution.energy.mm import OpenMMBridge, OpenMMEnergy
         energy_bridge = OpenMMBridge(self.system, integrator, **kwargs)
         self._energy_model = OpenMMEnergy(self.dim, energy_bridge)
 
@@ -240,7 +238,7 @@ class OpenMMToolsTestSystem(OpenMMSystem):
         -----
         This package has a local copy of openmmtools.testsystems (in bgmol._openmmtools_testsystems)
         in order to avoid inconsistencies between systems and data.
-        This copy is pinned to openmmtools version 0.19.0.
+        This copy is pinned to mmtools version 0.19.0.
         """
         super(OpenMMToolsTestSystem, self).__init__()
         TestsystemClass = getattr(_openmmtools_testsystems, name)

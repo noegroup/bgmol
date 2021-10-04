@@ -11,7 +11,8 @@ from bgmol.api import (
 from bgmol.systems.base import OpenMMToolsTestSystem
 from bgmol.systems import ImplicitBPTI
 from bgmol.tpl._openmmtools_testsystems import HarmonicOscillator
-from simtk import unit
+from bgmol.util.importing import import_openmm
+_, unit, _ = import_openmm()
 
 
 def test_get_openmmtools_system_names():
