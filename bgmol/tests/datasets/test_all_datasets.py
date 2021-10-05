@@ -5,7 +5,7 @@ import shutil
 
 import numpy as np
 from bgmol.util.importing import import_openmm
-_, unit, _ = import_openmm()
+mm, unit, _ = import_openmm()
 
 from bgmol import datasets
 from bgmol.api import list_datasets
