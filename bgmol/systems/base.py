@@ -209,7 +209,7 @@ class OpenMMSystem(BaseSystem):
             integrator = kwargs["integrator"]
         else:
             integrator = mm.LangevinIntegrator(temperature, 1., 0.002)
-        from bgflow.distribution.energy.mm import OpenMMBridge, OpenMMEnergy
+        from bgflow.distribution.energy.openmm import OpenMMBridge, OpenMMEnergy
         energy_bridge = OpenMMBridge(self.system, integrator, **kwargs)
         self._energy_model = OpenMMEnergy(self.dim, energy_bridge)
 
