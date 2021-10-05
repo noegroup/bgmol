@@ -11,8 +11,8 @@ from bgmol.util.ff import (
 from bgmol.systems.ala2 import DEFAULT_GLOBAL_Z_MATRIX
 from bgmol.systems.ala2 import AlanineDipeptideTSF
 from bgflow import GlobalInternalCoordinateTransformation
-from simtk import openmm as mm
-from simtk import unit
+from bgmol.util.importing import import_openmm
+mm, unit, _ = import_openmm()
 
 
 def test_bond_parameters():

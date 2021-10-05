@@ -1,10 +1,9 @@
 import warnings
 from typing import Sequence
 
-import simtk.unit
 import torch
-from simtk import openmm as mm
-from simtk import unit
+from ..util.importing import import_openmm
+mm, unit, _ = import_openmm()
 import numpy as np
 
 __all__ = [
@@ -57,7 +56,7 @@ def bond_marginal_estimate(
 
     Parameters
     ----------
-    system : simtk.openmm.System
+    system : openmm.System
         The openmm system that contains all information about the energy function and constraints.
     coordinate_transform : bgflow CoordinateTransformation
     temperature : float
@@ -107,7 +106,7 @@ def angle_marginal_estimate(
 
     Parameters
     ----------
-    system : simtk.openmm.System
+    system : openmm.System
         The openmm system that contains all information about the energy function and constraints.
     coordinate_transform : bgflow CoordinateTransformation
     temperature : float
@@ -398,11 +397,11 @@ def evaluate_14_potential(distances, chargeprods, sigmas, epsilons):
 
 def lookup_bonds(system, pairs, temperature):
     """Parse the equilibrium lengths and force constants of specified bonds
-    from a simtk.openmm.System.
+    from a openmm.System.
 
     Parameters
     ----------
-    system : simtk.openmm.System
+    system : openmm.System
         The system object that contains all potential and constraint definitions.
     pairs : np.ndarray
         Atom ids of the bonds of shape (n_bonds_to_look_up, 2).
@@ -448,11 +447,11 @@ def lookup_bonds(system, pairs, temperature):
 
 def lookup_angles(system, angles, temperature):
     """Parse the equilibrium angles and force constants of specified angles
-    from a simtk.openmm.System.
+    from a openmm.System.
 
     Parameters
     ----------
-    system : simtk.openmm.System
+    system : openmm.System
         The system object that contains all potential and constraint definitions.
     angles : np.ndarray
         Atom ids of the angles of shape (n_bonds_to_look_up, 3).
