@@ -2,8 +2,8 @@ import os
 import warnings
 import tempfile
 import numpy as np
-from simtk import unit
-from simtk.openmm import app
+from bgmol.util.importing import import_openmm
+_, unit, app = import_openmm()
 from ..systems.base import OpenMMSystem
 from torchvision.datasets.utils import download_url
 

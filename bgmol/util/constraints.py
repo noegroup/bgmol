@@ -1,6 +1,7 @@
 
 import numpy as np
-from simtk import unit
+from bgmol.util.importing import import_openmm
+_, unit, _ = import_openmm()
 
 
 __all__ = ["project_forces_onto_constraints"]

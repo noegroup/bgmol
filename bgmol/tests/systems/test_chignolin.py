@@ -1,6 +1,7 @@
 import pytest
-import simtk.openmm as mm
-from simtk.openmm import app
+
+from bgmol.util.importing import import_openmm
+mm, _, app = import_openmm()
 
 
 def test_chignolin_tics(chignolin):

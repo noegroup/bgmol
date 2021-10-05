@@ -1,7 +1,8 @@
 import os
 import tempfile
 import numpy as np
-from simtk.openmm import app
+from bgmol.util.importing import import_openmm
+_, _, app = import_openmm()
 import mdtraj as md
 from ..systems.base import OpenMMToolsTestSystem, OpenMMSystem
 from torchvision.datasets.utils import download_url
