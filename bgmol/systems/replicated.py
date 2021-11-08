@@ -5,24 +5,8 @@ Systems for batch evaluation.
 import copy
 import numpy as np
 
-from simtk import unit
-from simtk.openmm import (
-    System,
-    LocalCoordinatesSite,
-    OutOfPlaneSite,
-    TwoParticleAverageSite,
-    ThreeParticleAverageSite,
-    HarmonicBondForce,
-    HarmonicAngleForce,
-    PeriodicTorsionForce,
-    NonbondedForce,
-    CustomBondForce,
-    # for supporting CHARMM22*
-    CustomTorsionForce,
-    CMAPTorsionForce,
-)
-
-from simtk.openmm.app import Topology
+from bgmol.util.importing import import_openmm
+mm, unit, app = import_openmm()
 
 from bgmol.util import BGMolException
 from bgmol.systems import BaseSystem
@@ -98,16 +82,16 @@ class ReplicatedSystem(BaseSystem):
         return NotImplemented
 
     @staticmethod
-    def replicate_topology(base_topology: Topology, n_replicas: int):
+    def replicate_topology(base_topology: app.Topology, n_replicas: int):
         """Replicate an OpenMM Topology."""
-        topology = Topology()
+        topology = app.Topology()
         # TODO
         return NotImplemented
 
     @staticmethod
-    def replicate_system(base_system: System, n_replicas: int, enable_energies: bool):
+    def replicate_system(base_system: mm.System, n_replicas: int, enable_energies: bool):
         """Replicate an OpenMM System."""
-        system = System()
+        system = mm.System()
         n_particles = base_system.getNumParticles()
         # particles
         for j in range(n_replicas):
@@ -137,7 +121,7 @@ class ReplicatedSystem(BaseSystem):
 
     @staticmethod
     def _replicate_virtual_site(vs, n_particles, replica):
-        if isinstance(vs, LocalCoordinatesSite):
+        if isinstance(vs, mm.LocalCoordinatesSite):
             args = []
             for i in range(vs.getNumParticles()):
                 args.append(vs.getParticle(i) + replica * n_particles)
@@ -145,24 +129,24 @@ class ReplicatedSystem(BaseSystem):
             args.append(vs.getXWeights())
             args.append(vs.getYWeights())
             args.append(vs.getLocalPosition())
-            return LocalCoordinatesSite(*args)
-        elif isinstance(vs, OutOfPlaneSite):
+            return mm.LocalCoordinatesSite(*args)
+        elif isinstance(vs, mm.OutOfPlaneSite):
             args = []
             for i in range(vs.getNumParticles()):
                 args.append(vs.getParticle(i) + replica * n_particles)
             args.append(vs.getWeight12())
             args.append(vs.getWeight13())
             args.append(vs.getWeightCross())
-            return OutOfPlaneSite(*args)
-        elif isinstance(vs, TwoParticleAverageSite):
-            return TwoParticleAverageSite(
+            return mm.OutOfPlaneSite(*args)
+        elif isinstance(vs, mm.TwoParticleAverageSite):
+            return mm.TwoParticleAverageSite(
                 vs.getParticle(0) + replica * n_particles,
                 vs.getParticle(1) + replica * n_particles,
                 vs.getWeight(0),
                 vs.getWeight(1)
             )
-        elif isinstance(vs, ThreeParticleAverageSite):
-            return ThreeParticleAverageSite(
+        elif isinstance(vs, mm.ThreeParticleAverageSite):
+            return mm.ThreeParticleAverageSite(
                 vs.getParticle(0) + replica * n_particles,
                 vs.getParticle(1) + replica * n_particles,
                 vs.getParticle(2) + replica * n_particles,
@@ -176,7 +160,7 @@ class ReplicatedSystem(BaseSystem):
     @staticmethod
     def _replicate_HarmonicBondForce(force, n_particles, n_replicas, enable_energies):
         replicated_forces = []
-        replicated_force = HarmonicBondForce()
+        replicated_force = mm.HarmonicBondForce()
         replicated_force.setUsesPeriodicBoundaryConditions(force.usesPeriodicBoundaryConditions())
         for j in range(n_replicas):
             for i in range(force.getNumBonds()):
@@ -186,7 +170,7 @@ class ReplicatedSystem(BaseSystem):
                 # create a new force object for each replicate
                 replicated_force.setForceGroup(j)
                 replicated_forces.append(replicated_force)
-                replicated_force = HarmonicBondForce()
+                replicated_force = mm.HarmonicBondForce()
                 replicated_force.setUsesPeriodicBoundaryConditions(force.usesPeriodicBoundaryConditions())
         if len(replicated_forces) == 0:
             replicated_forces.append(replicated_force)
@@ -195,7 +179,7 @@ class ReplicatedSystem(BaseSystem):
     @staticmethod
     def _replicate_HarmonicAngleForce(force, n_particles, n_replicas, enable_energies):
         replicated_forces = []
-        replicated_force = HarmonicAngleForce()
+        replicated_force = mm.HarmonicAngleForce()
         replicated_force.setUsesPeriodicBoundaryConditions(force.usesPeriodicBoundaryConditions())
         for j in range(n_replicas):
             for i in range(force.getNumAngles()):
@@ -209,7 +193,7 @@ class ReplicatedSystem(BaseSystem):
                 # create a new force object for each replicate
                 replicated_force.setForceGroup(j)
                 replicated_forces.append(replicated_force)
-                replicated_force = HarmonicAngleForce()
+                replicated_force = mm.HarmonicAngleForce()
                 replicated_force.setUsesPeriodicBoundaryConditions(force.usesPeriodicBoundaryConditions())
         if len(replicated_forces) == 0:
             replicated_forces.append(replicated_force)
@@ -218,7 +202,7 @@ class ReplicatedSystem(BaseSystem):
     @staticmethod
     def _replicate_PeriodicTorsionForce(force, n_particles, n_replicas, enable_energies):
         replicated_forces = []
-        replicated_force = PeriodicTorsionForce()
+        replicated_force = mm.PeriodicTorsionForce()
         replicated_force.setUsesPeriodicBoundaryConditions(force.usesPeriodicBoundaryConditions())
         for j in range(n_replicas):
             for i in range(force.getNumTorsions()):
@@ -233,7 +217,7 @@ class ReplicatedSystem(BaseSystem):
                 # create a new force object for each replicate
                 replicated_force.setForceGroup(j)
                 replicated_forces.append(replicated_force)
-                replicated_force = PeriodicTorsionForce()
+                replicated_force = mm.PeriodicTorsionForce()
                 replicated_force.setUsesPeriodicBoundaryConditions(force.usesPeriodicBoundaryConditions())
         if len(replicated_forces) == 0:
             replicated_forces.append(replicated_force)
@@ -242,7 +226,7 @@ class ReplicatedSystem(BaseSystem):
     @staticmethod
     def _replicate_CustomTorsionForce(force, n_particles, n_replicas, enable_energies):
         replicated_forces = []
-        replicated_force = CustomTorsionForce(force.getEnergyFunction())
+        replicated_force = mm.CustomTorsionForce(force.getEnergyFunction())
         replicated_force.setUsesPeriodicBoundaryConditions(force.usesPeriodicBoundaryConditions())
         for i in range(force.getNumGlobalParameters()):
             replicated_force.addGlobalParameter(force.getGlobalParameterName(i),
@@ -266,7 +250,7 @@ class ReplicatedSystem(BaseSystem):
     @staticmethod
     def _replicate_CMAPTorsionForce(force, n_particles, n_replicas, enable_energies):
         replicated_forces = []
-        replicated_force = CMAPTorsionForce()
+        replicated_force = mm.CMAPTorsionForce()
         replicated_force.setUsesPeriodicBoundaryConditions(force.usesPeriodicBoundaryConditions())
         for i in range(force.getNumMaps()):
             size, energy = force.getMapParameters(i)
@@ -285,7 +269,7 @@ class ReplicatedSystem(BaseSystem):
     @staticmethod
     def _replicate_NonbondedForce(force, n_particles, n_replicas, enable_energies):
         nonbonded_method = force.getNonbondedMethod()
-        if nonbonded_method == NonbondedForce.NoCutoff:
+        if nonbonded_method == mm.NonbondedForce.NoCutoff:
             return ReplicatedSystem._replicate_nonbonded_as_custom_bond_force(
                 force,
                 n_particles,
@@ -302,7 +286,7 @@ class ReplicatedSystem(BaseSystem):
         ONE_4PI_EPS0 = 138.935456
 
         def prep_force(force=force, energy_string=energy_string):
-            f = CustomBondForce(energy_string)
+            f = mm.CustomBondForce(energy_string)
             f.addGlobalParameter("ONE_4PI_EPS0", ONE_4PI_EPS0)
             f.addPerBondParameter("qiqj")
             f.addPerBondParameter("epsilon")

@@ -5,8 +5,8 @@ import io
 
 import numpy as np
 
-from simtk.openmm import unit
-from simtk.openmm.app import *
+from bgmol.util.importing import import_openmm
+mm, unit, app = import_openmm()
 
 from openmmtools.utils import is_quantity_close
 
@@ -38,7 +38,7 @@ def test_quantity_to_yaml():
 def test_singleton_to_yaml():
     """Tests for saving and parsing openmm Singleton objects to and from yaml files."""
     stream = io.StringIO()
-    q = [HBonds, PME, LJPME]
+    q = [app.HBonds, app.PME, app.LJPME]
     yaml_dump(q, stream)
     q2 = yaml_load(stream.getvalue())
     for a,b in zip(q, q2):

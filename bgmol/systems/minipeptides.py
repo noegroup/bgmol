@@ -3,8 +3,8 @@
 import os
 import tempfile
 from collections import OrderedDict
-from simtk.openmm import app
-from simtk import unit
+from bgmol.util.importing import import_openmm
+_, unit, app = import_openmm()
 from bgmol.systems import OpenMMSystem
 from bgmol.util import get_data_file
 from torchvision.datasets.utils import download_url

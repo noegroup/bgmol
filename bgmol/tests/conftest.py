@@ -2,7 +2,9 @@
 
 import pytest
 import os
-from bgmol.datasets import Ala2Implicit1000
+import torch
+from bgmol.datasets import Ala2Implicit1000Test
+#from bgmol.datasets import Ala2TSF1000
 from bgmol.systems import ChignolinC22Implicit
 from bgmol import systems, api
 
@@ -29,7 +31,7 @@ def get_fn():
 
 @pytest.fixture(scope="session")
 def ala2dataset(tmpdir_factory):
-    return Ala2Implicit1000(root=tmpdir_factory.mktemp("ala2dataset"), download=True, read=True)
+    return Ala2Implicit1000Test(root=tmpdir_factory.mktemp("ala2dataset"), download=True, read=True)
 
 
 @pytest.fixture(scope="session")
@@ -57,3 +59,33 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         if "slow" in item.keywords:
             item.add_marker(skip_slow)
+
+
+@pytest.fixture(
+    params=[
+        "cpu",
+        pytest.param(
+            "cuda:0",
+            marks=pytest.mark.skipif(
+                not torch.cuda.is_available(),
+                reason="CUDA not available."
+            )
+        )
+    ]
+)
+
+
+def device(request):
+    """Run a test case for all available devices."""
+    return request.param
+
+
+@pytest.fixture(params=[torch.float32, torch.float64])
+def dtype(request, device):
+    """Run a test case in single and double precision."""
+    return request.param
+
+
+@pytest.fixture()
+def ctx(dtype, device):
+    return {"dtype": dtype, "device": device}

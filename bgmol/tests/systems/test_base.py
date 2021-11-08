@@ -1,7 +1,7 @@
 """Test functionality of the system classes in the base module"""
 
-from simtk import unit
-from simtk.openmm import app
+from bgmol.util.importing import import_openmm
+_, unit, app = import_openmm()
 import pytest
 
 from bgmol.systems.base import OpenMMSystem, OpenMMToolsTestSystem

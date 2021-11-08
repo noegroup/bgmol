@@ -33,11 +33,12 @@ if PY3:
 import mdtraj.core.element as elem
 from mdtraj.utils import in_units_of, ensure_type, import_, cast_indices
 from mdtraj.utils.six import string_types
-
+from ..util.importing import import_openmm
 try:
+    mm, units, _ = import_openmm()
     # openmm
-    import simtk.unit as units
-    import simtk.openmm as mm
+    import openmm.unit as units
+    import openmm as mm
     OPENMM_IMPORTED = True
 except ImportError:
     # if someone tries to import all of mdtraj but doesn't
@@ -301,7 +302,7 @@ class HDF5TrajectoryFile(object):
         """
         _check_mode(self.mode, ('w', 'a'))
 
-        # we want to be able to handle the simtk.openmm Topology object
+        # we want to be able to handle the openmmm Topology object
         # here too, so if it's not an mdtraj topology we'll just guess
         # that it's probably an openmm topology and convert
         if not isinstance(topology_object, Topology):
@@ -615,7 +616,7 @@ class HDF5TrajectoryFile(object):
 
         This method saves data that is associated with one or more simulation
         frames. Note that all of the arguments can either be raw numpy arrays
-        or unitted arrays (with simtk.unit.Quantity). If the arrays are unittted,
+        or unitted arrays (with openmm.unit.Quantity). If the arrays are unittted,
         a unit conversion will be automatically done from the supplied units
         into the proper units for saving on disk. You won't have to worry about
         it.
@@ -676,9 +677,9 @@ class HDF5TrajectoryFile(object):
         if cell_lengths is not None and cell_angles is None:
             raise ValueError('cell_angles were given, but no cell_lengths')
 
-        # if the input arrays are simtk.unit.Quantities, convert them
+        # if the input arrays are openmm.unit.Quantities, convert them
         # into md units. Note that this acts as a no-op if the user doesn't
-        # have simtk.unit installed (e.g. they didn't install OpenMM)
+        # have openmm.unit installed (e.g. they didn't install OpenMM)
         coordinates = in_units_of(coordinates, None, 'nanometers')
         time = in_units_of(time, None, 'picoseconds')
         cell_lengths = in_units_of(cell_lengths, None, 'nanometers')
@@ -1067,7 +1068,7 @@ class HDF5Reporter(object):
 
         Parameters
         ----------
-        simulation : simtk.openmm.app.Simulation
+        simulation : openmmm.app.Simulation
             The Simulation to generate a report for
         """
         if self._atomSubset is not None:
@@ -1107,7 +1108,7 @@ class HDF5Reporter(object):
 
         Parameters
         ----------
-        simulation : simtk.openmm.app.Simulation
+        simulation : openmmm.app.Simulation
             The Simulation to generate a report for
 
         Returns
@@ -1126,9 +1127,9 @@ class HDF5Reporter(object):
 
         Parameters
         ----------
-        simulation : simtk.openmm.app.Simulation
+        simulation : openmmm.app.Simulation
             The Simulation to generate a report for
-        state : simtk.openmm.State
+        state : openmmm.State
             The current state of the simulation
         """
         if not self._is_intialized:

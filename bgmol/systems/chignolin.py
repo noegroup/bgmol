@@ -2,8 +2,8 @@ import os
 import warnings
 import tempfile
 import numpy as np
-from simtk import unit
-from simtk.openmm import app
+from bgmol.util.importing import import_openmm
+_, unit, app = import_openmm()
 from ..systems.base import OpenMMSystem
 from torchvision.datasets.utils import download_url
 
@@ -59,13 +59,11 @@ class ChignolinC22Implicit(OpenMMSystem):
             assert os.path.isfile(os.path.join(root, sourcefile))
 
         # Load the CHARMM files
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")  # I don't want to see warnings about mixin force field
-            params = app.CharmmParameterSet(
-                os.path.join(root, "top_all22star_prot.rtf"),
-                os.path.join(root, "top_water_ions.rtf"),
-                os.path.join(root, "parameters_ak.prm")
-            )
+        params = app.CharmmParameterSet(
+            os.path.join(root, "top_all22star_prot.rtf"),
+            os.path.join(root, "top_water_ions.rtf"),
+            os.path.join(root, "parameters_ak_dihefix.prm")
+        )
 
         # create system
         psf = app.CharmmPsfFile(os.path.join(root, "structure.psf"))
@@ -94,7 +92,7 @@ class ChignolinC22Implicit(OpenMMSystem):
         return npz["tica_mean"], npz["tica_eigenvectors"]
 
     FILES = {
-        "parameters_ak.prm": "d953daf4925e4146a5fcece875ee4e57",
+        "parameters_ak_dihefix.prm": "f712c2392fdf892e43341fed64305ba8",
         "structure.pdb": "be19629a75e0ee4e1cc3c72a9ebc63c6",
         "structure.psf": "944b26edb992c7dbdaa441675b9e42c5",
         "top_all22star_prot.rtf": "d046c9a998369be142a6470fd5bb3de1",
