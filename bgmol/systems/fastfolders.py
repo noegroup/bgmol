@@ -118,10 +118,17 @@ class FastFolder(OpenMMSystem):
             assert os.path.isfile(os.path.join(root, sourcefile))
 
         # Load the CHARMM files
+        charmm_files = [
+            os.path.join(root, "toppar", fname)
+            for fname in [
+                "top_all36_prot.rtf",
+                "par_all36m_prot.prm",
+                "toppar_all36_prot_c36m_d_aminoacids.str",
+                "toppar_water_ions.str",
+            ]
+        ]
         params = app.CharmmParameterSet(
-            *glob.glob(os.path.join(root, "toppar/*.str")),
-            *glob.glob(os.path.join(root, "toppar/*.rtf")),
-            *glob.glob(os.path.join(root, "toppar/*.prm"))
+            *charmm_files
         )
 
         # create system
