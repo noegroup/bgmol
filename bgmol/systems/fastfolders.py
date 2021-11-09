@@ -1,12 +1,13 @@
 
 
 import os
+import glob
 import tempfile
 from bgmol.util.importing import import_openmm
 _, unit, app = import_openmm()
 from bgmol.systems import OpenMMSystem
 from bgmol.util import get_data_file
-from torchvision.datasets.utils import download_url
+from torchvision.datasets.utils import download_url, download_and_extract_archive
 
 __all__ = ["FASTFOLDER_NAMES", "FastFolder"]
 
@@ -14,7 +15,8 @@ __all__ = ["FASTFOLDER_NAMES", "FastFolder"]
 class FastFolder(OpenMMSystem):
     """Small, fast-folding proteins.
 
-    This is a remake of the proteins from the paper Created by Yaoyi Chen.
+    This is a remake of the proteins from reference [1] in charmm-gui.
+    Created by Andreas Krämer.
 
     Attributes
     ----------
@@ -48,12 +50,12 @@ class FastFolder(OpenMMSystem):
     -----
     Requires an internet connection to download the topology and initial structure.
     """
-    url = "http://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/systems/fastfolders/"
+    url = "http://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/systems/fastfolders/FastFolder/"
 
     def __init__(
             self,
             protein="chignolin",
-            forcefield=["amber99sbildn.xml", "tip3p.xml", "amber99_obc.xml"],
+            forcefield="charmm36m",
             constraints=app.HBonds,
             solvated=False,
             hydrogen_mass=None,
@@ -66,13 +68,15 @@ class FastFolder(OpenMMSystem):
 
         if not protein in FASTFOLDER_NAMES:
             raise ValueError(f"protein has to be one of {list(FASTFOLDER_NAMES.keys())}")
+        if not forcefield in self.ALLOWED_FORCE_FIELDS:
+            raise ValueError(f"forcefield has to be in {self.ALLOWED_FORCE_FIELDS}")
 
         # register parameters
         self.protein = self.system_parameter(
             protein, protein, default="chignolin"
         )
         self.forcefield = self.system_parameter(
-            "forcefield", forcefield, default=["amber99sbildn.xml", "tip3p.xml", "amber99_obc.xml"]
+            "forcefield", forcefield, default="charmm36m"
         )
         self.constraints = self.system_parameter(
             "constraints", constraints, default=app.HBonds
@@ -102,43 +106,67 @@ class FastFolder(OpenMMSystem):
             psf_filename = f"{FASTFOLDER_NAMES[protein]}.psf"
             forcefield = [fname for fname in forcefield if fname != "tip3p.xml"]
 
-        # download file
+        # download files
         full_pdb_filename = os.path.join(root, pdb_filename)
         full_psf_filename = os.path.join(root, psf_filename)
         if download:
-            self._download(pdb_filename, root=root)
-            self._download(psf_filename, root=root)
-        else:
-            assert os.path.isfile(full_pdb_filename)
-            assert os.path.isfile(full_psf_filename)
+            self._download(pdb_filename, psf_filename, root=root)
 
-        pdb = app.PDBFile(full_pdb_filename)
+        assert os.path.isfile(full_pdb_filename)
+        assert os.path.isfile(full_psf_filename)
+        for sourcefile in self.CHARMM_FILES:
+            assert os.path.isfile(os.path.join(root, sourcefile))
+
+        # Load the CHARMM files
+        params = app.CharmmParameterSet(
+            *glob.glob(os.path.join(root, "toppar/*.str")),
+            *glob.glob(os.path.join(root, "toppar/*.rtf")),
+            *glob.glob(os.path.join(root, "toppar/*.prm"))
+        )
+
+        # create system
         psf = app.CharmmPsfFile(full_psf_filename)
-        ff = app.ForceField(*forcefield)
-        self._system = ff.createSystem(
-            psf.topology,
-            removeCMMotion=True,
-            nonbondedMethod=nonbonded_method,
-            nonbondedCutoff=nonbonded_cutoff,
-            switchDistance=switch_distance,
+        pdb = app.PDBFile(full_pdb_filename)
+        self._system = psf.createSystem(
+            params,
+            nonbondedMethod=app.NoCutoff,
             constraints=constraints,
             hydrogenMass=hydrogen_mass,
-            rigidWater=True
+            implicitSolvent=app.OBC2
         )
+
         self._positions = pdb.positions
         self._topology = psf.topology
 
-    def _download(self, filename, root):
+    def _download(self, *files, root):
         # get checksum
         md5 = None
-        with open(get_data_file("../data/md5sums.txt"), "r") as fp:
-            for line in fp:
-                if line.split()[1] == filename:
-                    md5 = line.split()[0]
-        assert md5 is not None
-        # download
-        download_url(self.url + filename, root, filename, md5)
-        assert os.path.isfile(os.path.join(root, filename))
+        for sourcefile in files:
+            with open(get_data_file("../data/md5sums.txt"), "r") as fp:
+                for line in fp:
+                    if line.split()[1] == sourcefile:
+                        md5 = line.split()[0]
+            assert md5 is not None
+            # download
+            download_url(self.url + sourcefile, root, sourcefile, md5)
+            assert os.path.isfile(os.path.join(root, sourcefile))
+
+        for sourcefile in self.CHARMM_FILES:
+            md5 = self.CHARMM_FILES[sourcefile]
+            download_and_extract_archive(
+                url=self.url+sourcefile,
+                download_root=root,
+                extract_root=root,
+                md5=md5,
+                remove_finished=True
+            )
+            assert os.path.isfile(os.path.join(root, sourcefile))
+
+    CHARMM_FILES = {
+        "c36.tgz": "75596f1993ce815bb1629b14361c8d32",
+    }
+
+    ALLOWED_FORCE_FIELDS = ["charmm36m"]
 
 
 FASTFOLDER_NAMES = {
