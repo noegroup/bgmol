@@ -135,7 +135,7 @@ class FastFolder(OpenMMSystem):
             implicitSolvent=app.OBC2
         )
 
-        self._positions = pdb.positions
+        self._positions = pdb.getPositions(asNumpy=True).value_in_unit(unit.nanometer)
         self._topology = psf.topology
 
     def _download(self, *files, root):
