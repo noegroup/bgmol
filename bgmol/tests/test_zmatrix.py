@@ -39,7 +39,8 @@ def test_z_matrix_mixed_trafo(system):
 
 @pytest.mark.parametrize("system", [
     #AlanineDipeptideImplicit(),
-    ImplicitBPTI()
+    ChignolinC22Implicit(),
+    ImplicitBPTI(),
 ])
 def test_z_matrix_global_trafo(system):
     top = system.mdtraj_topology

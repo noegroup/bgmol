@@ -121,6 +121,7 @@ TRP:
   - ["H", "N", "CA", "C"]
   - ["O", "C", "CA", "N"]
   - ["HA", "CA", "N", "C"]
+  # TODO: FINISH
 
 TYR:
   - ["H", "N", "CA", "C"]

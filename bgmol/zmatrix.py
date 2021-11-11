@@ -74,12 +74,13 @@ class ZMatrixFactory:
         while len(current) > 0:
             new_current = copy(current)
             for atom in current:
-                if self._is_placed(atom):
-                    for neighbor in self._neighbors(atom):
-                        if not self._is_placed(neighbor) and neighbor in subset:
-                            new_current.add(neighbor)
-                    new_current.remove(atom)
+                assert self._is_placed(atom)
+                for neighbor in self._neighbors(atom):
+                    if not self._is_placed(neighbor) and neighbor in subset:
+                        new_current.add(neighbor)
+                new_current.remove(atom)
             current = new_current
+            # build part of z matrix
             z = []
             for atom in current:
                 closest = self._3closest_placed_atoms(atom, subset=subset)
@@ -101,7 +102,7 @@ class ZMatrixFactory:
     def _seed_z(self, current, subset):
         current = list(current)
         if len(current) == 0:
-            current = [0]
+            current = [subset[0]]
         closest = self._3closest_placed_atoms(current[0], subset, subset)
         seed = np.unique([*current, *closest])[:3]
         z = [
@@ -173,7 +174,6 @@ class ZMatrixFactory:
         # build_backbone
         if build_protein_backbone:
             self.build_naive(subset=np.intersect1d(self.top.select("backbone"), subset))
-
         # build residues
         for i, residue in enumerate(self.top.residues):
             is_nterm = (i == 0) and residue.is_protein
@@ -199,9 +199,10 @@ class ZMatrixFactory:
         # append missing
         placed = np.array(list(self._placed_atoms()))
         if not len(placed) == len(subset):
+            missing = np.setdiff1d(np.arange(self.top.n_atoms), placed)
             warnings.warn(
                 f"Not all atoms found in templates. Applying naive reconstruction for missing atoms: "
-                f"{np.setdiff1d(np.arange(self.top.n_atoms), placed)}"
+                f"{tuple(self._atoms[m] for m in missing)}"
             )
             self.build_naive(subset)
         return self.z_matrix, self.fixed
