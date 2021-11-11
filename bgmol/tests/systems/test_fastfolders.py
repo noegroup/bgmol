@@ -12,6 +12,8 @@ from bgmol.systems.fastfolders import FastFolder, FAST_FOLDER_NAMES
 def fastfolder_system(request, tmpdir_factory):
     protein, solvated, forcefield = request.param
     tmpdir = tmpdir_factory.mktemp(protein)
+    if forcefield != "charmm36m" and protein in ["ntl9", "villin"]:
+        pytest.skip("Nonstandard residues.")
     yield FastFolder(protein, download=True, solvated=solvated, forcefield=forcefield, root=str(tmpdir))
 
 
@@ -20,7 +22,6 @@ def test_fastfolder_systems(fastfolder_system):
     assert n_atoms == len(fastfolder_system.positions)
 
 
-@pytest.mark.slow
 def test_fastfolder_energy(fastfolder_system):
     torch = pytest.importorskip("torch")
     n_atoms = fastfolder_system.mdtraj_topology.n_atoms

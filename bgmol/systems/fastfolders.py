@@ -20,26 +20,26 @@ class FastFolder(OpenMMSystem):
     ----------
     protein : str
         The name of the protein. See the dictionary `FASTFOLDER_NAMES` in this module for valid options.
-    forcefield : "charmm36m" or list[str]
+    forcefield : "charmm36m" or list[str], optional
         Either use the charmm36m force field or a list of builtin openmm force field files.
         For openmm force field files not all proteins might be supported
         (e.g. ["amber99sbildn.xml"] does not support villin and ntl9 because of nonstandard residues,
         a norleucine (NLE) and a ALA-CONH2 C-terminus, respectively).
-    implicit_solvent : app.internal.singleton.Singleton or None
+    implicit_solvent : app.internal.singleton.Singleton or None, optional
         Implicit solvent model to be used.
-    constraints : app.internal.singleton.Singleton
+    constraints : app.internal.singleton.Singleton, optional
         Constraint types
-    solvated : bool
+    solvated : bool, optional
         Whether to add explicit water and ions.
-    hydrogen_mass : unit.Quantity or None
+    hydrogen_mass : unit.Quantity or None, optional
         If None, don't repartition hydrogen mass. Else, assign the specified mass to hydrogen atoms.
-    nonbonded_cutoff : unit.Quantity
+    nonbonded_cutoff : unit.Quantity, optional
         The cutoff for nonbonded forces.
-    switch_distance : unit.Quantity or None
+    switch_distance : unit.Quantity or None, optional
         Switch distance for nonbonded (LJ) interactions. If None, don't use a switch distance.
-    root : str
+    root : str, optional
         The root directory to which to download the files.
-    download : bool
+    download : bool, optional
         Whether files should be downloaded.
 
     References
@@ -51,7 +51,8 @@ class FastFolder(OpenMMSystem):
 
     Notes
     -----
-    Requires an internet connection to download the topology and initial structure.
+    - Requires an internet connection to download the topology and initial structure.
+    - Initial solvated structures are not equilibrated
     """
     url = "http://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/systems/fastfolders/"
 
@@ -106,7 +107,6 @@ class FastFolder(OpenMMSystem):
         local_files = {key: os.path.join(root, value) for key, value in self.source_files.items()}
         for f in local_files.values():
             assert os.path.isfile(f)
-
 
         # Load the CHARMM files
         psf = app.CharmmPsfFile(local_files.pop("psf"))
