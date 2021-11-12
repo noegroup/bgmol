@@ -156,6 +156,12 @@ def torsion_marginal_cdf_estimate(
         max_energy=1e3 # in kT,
 ):
     """discrete_torsions can be an int or an array of floats"""
+
+    warnings.warn(
+        "Torsional marginal estimates are beta and may fail. "
+        "This function depends on functionality that is not in the bgflow main branch."
+    )
+
     if isinstance(discrete_torsions, int):
         discrete_torsions = np.linspace(-np.pi, np.pi, discrete_torsions + 1)
     if isinstance(discrete_torsions, np.ndarray):
