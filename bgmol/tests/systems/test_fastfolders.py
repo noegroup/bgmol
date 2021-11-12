@@ -26,5 +26,4 @@ def test_fastfolder_energy(fastfolder_system):
     torch = pytest.importorskip("torch")
     n_atoms = fastfolder_system.mdtraj_topology.n_atoms
     pos = torch.tensor(fastfolder_system.positions.reshape(1, n_atoms * 3))
-    fastfolder_system.reinitialize_energy_model(n_workers=1)
     fastfolder_system.energy_model.energy(pos)

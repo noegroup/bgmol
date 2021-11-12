@@ -169,6 +169,11 @@ class FastFolder(OpenMMSystem):
             files["str"] = "FastFolder/toppar_water_ions.str"
         return files
 
+    def reinitialize_energy_model(self, temperature=300, **kwargs):
+        """override default n_workers to 1"""
+        n_workers = kwargs.pop("n_workers", 1)
+        super().reinitialize_energy_model(temperature=temperature, n_workers=n_workers, **kwargs)
+
 
 _INIT_BOX_SIZES = {
     "bba": 4.7,
