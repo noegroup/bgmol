@@ -16,7 +16,7 @@ from bgflow import (
 def _check_trafo_complete(trafo, system):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")  # we don't care if this is numerically sound for now
-        xyz = torch.tensor(np.array(system.positions._value)).reshape(1,-1)
+        xyz = torch.tensor(np.array(system.positions)).reshape(1, -1)
         trafo.to(xyz)
         *out, dlogp = trafo.forward(xyz)
         xyz2, dlogp2 = trafo.forward(*out, inverse=True)
@@ -31,14 +31,14 @@ def test_z_matrix_mixed_trafo(system):
     top = system.mdtraj_topology
     factory = ZMatrixFactory(top, "backbone")
     zmatrix, fixed = factory.build_with_templates()
-    positions = torch.tensor(system.positions.value_in_unit(unit.nanometer)).reshape(1,-1)
+    positions = torch.tensor(system.positions).reshape(1, -1)
     data = positions.repeat(100, 1) + torch.randn(100, len(positions))
     trafo = MixedCoordinateTransformation(data, zmatrix, fixed, keepdims=10)
     _check_trafo_complete(trafo, system)
 
 
 @pytest.mark.parametrize("system", [
-    #AlanineDipeptideImplicit(),
+    AlanineDipeptideImplicit(),
     ChignolinC22Implicit(),
     ImplicitBPTI(),
 ])

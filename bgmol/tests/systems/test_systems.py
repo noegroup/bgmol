@@ -24,6 +24,7 @@ def test_num_particles(system_instance):
     assert num_particles > 0
     assert system_instance.mdtraj_topology.n_atoms == num_particles
     assert len(system_instance.positions) == num_particles
+    assert isinstance(system_instance.positions, np.ndarray)
 
 
 def test_energy_calculation(system_instance):

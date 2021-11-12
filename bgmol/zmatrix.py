@@ -186,6 +186,7 @@ class ZMatrixFactory:
                     self._z.append([resatoms[_e] for _e in entry])
 
             if is_nterm:
+                # TODO: support caps and other termini
                 # set two additional N-term protons
                 if "H2" in resatoms and not self._is_placed(resatoms["H2"]):  # not in not_ic:
                     self._z.append([resatoms["H2"], resatoms["N"], resatoms["CA"], resatoms["H"]])
