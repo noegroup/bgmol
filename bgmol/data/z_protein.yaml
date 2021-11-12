@@ -43,9 +43,32 @@ CYS:
   - ["HB3", "CB", "CA", "SG"] # improper
 
 HIS:
-  - ["H", "N", "CA", "C"]
-  - ["O", "C", "CA", "N"]
-  - ["HA", "CA", "N", "C"]
+  - ["CG", "CB", "CA", "N"]
+  - ["HB2", "CB", "CA", "CG"]
+  - ["HB3", "CB", "CA", "HB2"]
+  - ["HB1", "CB", "CA", "HB2"]  # alternative naming (HB1, HB2 or HB2, HB3)
+  - ["ND1", "CG", "CB", "CA"]
+  - ["CE1", "ND1", "CG", "CB"]
+  - ["HD1", "ND1", "CG", "CE1"]
+  - ["HN", "ND1", "CG", "CE1"] # alternative naming (HN or HD1)
+  - ["HE1", "CE1", "ND1", "NE2"]
+  - ["CD2", "CG", "ND1", "CE1"]
+  - ["NE2", "CD2", "CG", "ND1"]
+  - ["HD2", "CD2", "CG", "NE2"]
+
+HSE:
+  - ["CG", "CB", "CA", "N"]
+  - ["HB1", "CB", "CA", "CG"]
+  - ["HB2", "CB", "CA", "HB1"]
+  - ["ND1", "CG", "CB", "CA"]
+  - ["CE1", "ND1", "CG", "CB"]
+  - ["HD1", "ND1", "CG", "CE1"]
+  - ["HN", "N", "CA", "HA"] # alternative naming (HN or HD1)
+  - ["HE1", "CE1", "ND1", "NE2"]
+  - ["CD2", "CG", "ND1", "CE1"]
+  - ["NE2", "CD2", "CG", "ND1"]
+  - ["HD2", "CD2", "CG", "NE2"]
+  - ["HE2", "NE2", "CD2", "CE1"]
 
 ASP:
   - ["CG", "CB", "CA", "N"] # torsion
@@ -82,8 +105,8 @@ GLU:
   - ["OE2", "CD", "CG", "OE1"] # imppoper
   - ["HB2", "CB", "CA", "CG"] # improper
   - ["HB3", "CB", "CA", "CG"] # improper
-  - ["HG2", "CB", "CG", "CD"] # improper
-  - ["HG3", "CB", "CG", "CD"] # improper
+  - ["HG2", "CG", "CB", "CD"] # improper
+  - ["HG3", "CG", "CB", "HG2"] # improper
 
 GLY:
   # Amber style
@@ -96,10 +119,23 @@ GLY:
   - ["H", "N", "CA", "HA3"]
 
 TRP:
-  - ["H", "N", "CA", "C"]
-  - ["O", "C", "CA", "N"]
-  - ["HA", "CA", "N", "C"]
-  # TODO: FINISH
+  - ["CG", "CB", "CA", "N"]
+  - ["HB2", "CB", "CA", "CG"]
+  - ["HB3", "CB", "CA", "HB2"]
+  - ["CD2", "CG", "CB", "CA"]
+  - ["CD1", "CG", "CB", "CD2"]
+  - ["NE1", "CD1", "CG", "CD2"]
+  - ["HD1", "CD1", "CG", "NE1"]
+  - ["CE2", "CD2", "CG", "NE1"]
+  - ["HE1", "NE1", "CD1", "CG"]
+  - ["CE3", "CD2", "CG", "CE2"]
+  - ["CZ3", "CE3", "CD2", "CG"]
+  - ["CH2", "CZ3", "CE3", "CZ2"]
+  - ["CZ2", "CE2", "CD2", "CG"]
+  - ["HZ3", "CZ3", "CE3", "CH2"]
+  - ["HH2", "CH2", "CZ3", "CZ2"]
+  - ["HE3", "CE3", "CD2", "CZ3"]
+  - ["HZ2", "CZ2", "CE2", "CH2"]
 
 TYR:
   - ["CG", "CB", "CA", "N"] # torsion

@@ -24,7 +24,7 @@ def _check_trafo_complete(trafo, system):
 
 
 @pytest.mark.parametrize("system", [
-    #AlanineDipeptideImplicit(),
+    AlanineDipeptideImplicit(),
     ImplicitBPTI()
 ])
 def test_z_matrix_mixed_trafo(system):
@@ -87,3 +87,4 @@ def test_z_factory_naive_cgn(chignolin):
     z, fixed = factory.build_naive()
     assert fixed.shape == (10, )
     assert z.shape == (165, 4)
+

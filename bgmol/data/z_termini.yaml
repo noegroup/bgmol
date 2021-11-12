@@ -40,7 +40,7 @@ CTERM:
   # CHARMM36m style CONH2
   - ["NT", "C", "CA", "O"]
   - ["HT1", "NT", "C", "CA"]
-  - ["NT2",  "NT", "C", "HT1"]
+  - ["HT2",  "NT", "C", "HT1"]
   # CHARMM36m style NME
   - ["NT", "C", "CA", "N"]
   - ["CAT", "NT", "C", "CA"]
