@@ -5,7 +5,8 @@ import tempfile
 from bgmol.util.importing import import_openmm
 _, unit, app = import_openmm()
 from bgmol.systems import OpenMMSystem
-from torchvision.datasets.utils import download_url, download_and_extract_archive
+from torchvision.datasets.utils import download_url
+from ..util.pdbpatch import fixed_atom_names
 
 __all__ = ["FAST_FOLDER_NAMES", "FastFolder"]
 
@@ -109,8 +110,10 @@ class FastFolder(OpenMMSystem):
             assert os.path.isfile(f)
 
         # Load the CHARMM files
-        psf = app.CharmmPsfFile(local_files.pop("psf"))
-        pdb = app.PDBFile(local_files.pop("pdb"))
+        # (keep the CONH2 term of nlt9)
+        with fixed_atom_names(ALA=["HT1", "HT2"]):
+            psf = app.CharmmPsfFile(local_files.pop("psf"))
+            pdb = app.PDBFile(local_files.pop("pdb"))
 
         # specify solvation properties
         if solvated:

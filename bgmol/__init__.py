@@ -16,6 +16,7 @@ from . import datasets
 from . import systems
 from .api import *
 from .zmatrix import *
+from .util import *
 
 
 # Handle versioneer

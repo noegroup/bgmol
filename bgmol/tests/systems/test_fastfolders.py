@@ -1,20 +1,8 @@
 import pytest
-from itertools import product
-
-from bgmol.systems.fastfolders import FastFolder, FAST_FOLDER_NAMES
-
-
-@pytest.fixture(scope="session", params=product(
-    FAST_FOLDER_NAMES,
-    (False, True),
-    ("charmm36m", ["amber99sbildn.xml", "tip3p.xml"])
-))
-def fastfolder_system(request, tmpdir_factory):
-    protein, solvated, forcefield = request.param
-    tmpdir = tmpdir_factory.mktemp(protein)
-    if forcefield != "charmm36m" and protein in ["ntl9", "villin"]:
-        pytest.skip("Nonstandard residues.")
-    yield FastFolder(protein, download=True, solvated=solvated, forcefield=forcefield, root=str(tmpdir))
+import warnings
+from bgmol.zmatrix import ZMatrixFactory
+from bgflow import GlobalInternalCoordinateTransformation
+from ..test_zmatrix import _check_trafo_complete
 
 
 def test_fastfolder_systems(fastfolder_system):
@@ -27,3 +15,27 @@ def test_fastfolder_energy(fastfolder_system):
     n_atoms = fastfolder_system.mdtraj_topology.n_atoms
     pos = torch.tensor(fastfolder_system.positions.reshape(1, n_atoms * 3))
     fastfolder_system.energy_model.energy(pos)
+
+
+def test_z_factory_fastfolders(fastfolder_system):
+    if fastfolder_system.protein == "villin":
+        pytest.skip("NLE not implemented")
+    if fastfolder_system.solvated:
+        pytest.skip("Not available for solvated systems")
+    factory = ZMatrixFactory(fastfolder_system.mdtraj_topology)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        zmatrix, _ = factory.build_with_templates()
+
+    # make sure that all bonds in the zmatrix are physical bonds
+    all_bonds = {
+        (bond.atom1.index, bond.atom2.index)
+        for bond in fastfolder_system.mdtraj_topology.bonds
+    }
+    for *b, _, _ in zmatrix:
+        if min(*b) > -1:
+            assert tuple(b) in all_bonds or tuple(reversed(b)) in all_bonds
+
+    # check trafo
+    trafo = GlobalInternalCoordinateTransformation(zmatrix)
+    _check_trafo_complete(trafo, fastfolder_system)

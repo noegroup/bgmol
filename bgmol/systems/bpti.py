@@ -31,6 +31,6 @@ class ImplicitBPTI(OpenMMSystem):
             nonbondedCutoff=1.0*unit.nanometer,
             constraints=constraints, rigidWater=True
         )
-        self._positions = pdb.positions
+        self._positions = pdb.getPositions(asNumpy=True).value_in_unit(unit.nanometers)
         self._topology = pdb.topology
 
