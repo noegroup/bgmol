@@ -45,7 +45,9 @@ def test_z_matrix_mixed_trafo(system):
 def test_z_matrix_global_trafo(system):
     top = system.mdtraj_topology
     factory = ZMatrixFactory(top)
-    zmatrix, _ = factory.build_with_templates()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        zmatrix, _ = factory.build_with_templates()
     trafo = GlobalInternalCoordinateTransformation(zmatrix)
     _check_trafo_complete(trafo, system)
 
@@ -55,8 +57,8 @@ def test_z_factory_global():
     top = system.mdtraj_topology
     factory = ZMatrixFactory(top)
     z, _ = factory.build_naive()
+    assert factory.is_independent(z)
     assert len(z) == top.n_atoms
-    #assert (np.sort(z[:,0]) == np.arange(top.n_atoms)).all()
     trafo = GlobalInternalCoordinateTransformation(z)
     _check_trafo_complete(trafo, system)
 

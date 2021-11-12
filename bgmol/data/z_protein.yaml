@@ -1,17 +1,15 @@
+GENERAL:
+  - ["CB", "CA", "N", "C"]
+  - ["O", "C", "CA", "CB"]
+  - ["HA", "CA", "N", "CB"]
+  - ["H", "N", "CA", "HA"]
+
 ALA:
-  - ["H", "N", "CA", "C"]
-  - ["O", "C", "CA", "N"]
-  - ["HA", "CA", "N", "C"]
-  - ["CB", "CA", "N", "C"] # ... improper
   - ["HB1", "CB", "CA", "N"]
   - ["HB2", "CB", "CA", "HB1"]
   - ["HB3", "CB", "CA", "HB2"]
 
 LEU:
-  - ["H", "N", "CA", "C"] # improper ...
-  - ["O", "C", "CA", "N"]
-  - ["HA", "CA", "N", "C"]
-  - ["CB", "CA", "N", "C"] # ... improper
   - ["CG", "CB", "CA", "N"] # torsion
   - ["CD1", "CG", "CB", "CA"] # torsion
   - ["CD2", "CG", "CD1", "CB"] # improper
@@ -26,10 +24,6 @@ LEU:
   - ["HD23", "CD2", "CG", "HD22"] # improper
 
 ILE:
-  - ["H", "N", "CA", "C"]
-  - ["O", "C", "CA", "N"]
-  - ["HA", "CA", "N", "C"]
-  - ["CB", "CA", "N", "C"] # ... improper
   - ["CG1", "CB", "CA", "N"] # torsion
   - ["CG2", "CB", "CA", "CG1"] # improper
   - ["CD1", "CG1", "CB", "CA"] # torsion
@@ -44,10 +38,6 @@ ILE:
   - ["HG23", "CG2", "CB", "HG21"] # improper
 
 CYS:
-  - ["H", "N", "CA", "C"]
-  - ["O", "C", "CA", "N"]
-  - ["HA", "CA", "N", "C"]
-  - ["CB", "CA", "N", "C"] # ... improper
   - ["SG", "CB", "CA", "N"] # torsion
   - ["HB2", "CB", "CA", "SG"] # improper
   - ["HB3", "CB", "CA", "SG"] # improper
@@ -58,10 +48,6 @@ HIS:
   - ["HA", "CA", "N", "C"]
 
 ASP:
-  - ["H", "N", "CA", "C"]
-  - ["O", "C", "CA", "N"]
-  - ["HA", "CA", "N", "C"]
-  - ["CB", "CA", "N", "C"] # ... improper
   - ["CG", "CB", "CA", "N"] # torsion
   - ["OD1", "CG", "CB", "CA"] # torsion
   - ["OD2", "CG", "CB", "OD1"] # torsion
@@ -69,10 +55,6 @@ ASP:
   - ["HB3", "CB", "CA", "CG"] # improper
 
 ASN:
-  - ["H", "N", "CA", "C"]
-  - ["O", "C", "CA", "N"]
-  - ["HA", "CA", "N", "C"]
-  - ["CB", "CA", "N", "C"] # ... improper
   - ["CG", "CB", "CA", "N"] # torsion
   - ["OD1", "CG", "CB", "CA"] # torsion
   - ["ND2", "CG", "CB", "OD1"] # improper
@@ -82,10 +64,6 @@ ASN:
   - ["HD22", "ND2", "CG", "HD21"] # improper
 
 GLN:
-  - ["H", "N", "CA", "C"]
-  - ["O", "C", "CA", "N"]
-  - ["HA", "CA", "N", "C"]
-  - ["CB", "CA", "N", "C"] # ... improper
   - ["CG", "CB", "CA", "N"] # torsion
   - ["CD", "CG", "CB", "CA"] # torsion
   - ["OE1", "CD", "CG", "CB"] # torsion
@@ -98,10 +76,6 @@ GLN:
   - ["HE22", "NE2", "CD", "HE21"] # improper
 
 GLU:
-  - ["H", "N", "CA", "C"]
-  - ["O", "C", "CA", "N"]
-  - ["HA", "CA", "N", "C"]
-  - ["CB", "CA", "N", "C"] # ... improper
   - ["CG", "CB", "CA", "N"] # torsion
   - ["CD", "CG", "CB", "CA"] # torsion
   - ["OE1", "CD", "CG", "CB"] # torsion
@@ -112,10 +86,14 @@ GLU:
   - ["HG3", "CB", "CG", "CD"] # improper
 
 GLY:
-  - ["H", "N", "CA", "C"]
-  - ["O", "C", "CA", "N"]
+  # Amber style
   - ["HA2", "CA", "N", "C"]
-  - ["HA3", "CA", "C", "N"]
+  - ["HA3", "CA", "C", "HA2"]
+  # CHARMM36 style
+  - ["HA1", "CA", "N", "HA2"]
+  # any of these options:
+  - ["H", "N", "CA", "HA1"]
+  - ["H", "N", "CA", "HA3"]
 
 TRP:
   - ["H", "N", "CA", "C"]
@@ -124,10 +102,6 @@ TRP:
   # TODO: FINISH
 
 TYR:
-  - ["H", "N", "CA", "C"]
-  - ["O", "C", "CA", "N"]
-  - ["HA", "CA", "N", "C"]
-  - ["CB", "CA", "N", "C"] # ... improper
   - ["CG", "CB", "CA", "N"] # torsion
   - ["CD1", "CG", "CB", "CA"] # torsion
   - ["CD2", "CG", "CB", "CD1"] # improper
@@ -144,10 +118,6 @@ TYR:
   - ["HH", "OH", "CZ", "CE1"] # improper
 
 SER:
-  - ["H", "N", "CA", "C"]
-  - ["O", "C", "CA", "N"]
-  - ["HA", "CA", "N", "C"]
-  - ["CB", "CA", "N", "C"] # ... improper
   - ["OG", "CB", "CA", "N"] # torsion
   - ["HB2", "CB", "CA", "OG"] # improper
   - ["HB3", "CB", "CA", "OG"] # improper
@@ -155,9 +125,6 @@ SER:
     
 
 PRO:
-  - ["O", "C", "CA", "N"]
-  - ["HA", "CA", "N", "C"]
-  - ["CB", "CA", "N", "C"] # ... improper
   - ["CG", "CB", "CA", "N"] # torsion
   - ["CD", "CG", "CB", "CA"] # torsion
   - ["HB2", "CB", "CA", "CG"] # improper
@@ -168,10 +135,6 @@ PRO:
   - ["HD3", "CD", "CG", "N"] # improper
 
 ARG:
-  - ["H", "N", "CA", "C"]
-  - ["O", "C", "CA", "N"]
-  - ["HA", "CA", "N", "C"]
-  - ["CB", "CA", "N", "C"] # ... improper
   - ["CG", "CB", "CA", "N"] # torsion
   - ["CD", "CG", "CB", "CA"] # torsion
   - ["NE", "CD", "CG", "CB"] # torsion
@@ -191,10 +154,6 @@ ARG:
   - ["HH22", "NH2", "CZ", "HH21"] # improper
 
 LYS:
-  - ["H", "N", "CA", "C"]
-  - ["O", "C", "CA", "N"]
-  - ["HA", "CA", "N", "C"]
-  - ["CB", "CA", "N", "C"] # ... improper
   - ["CG", "CB", "CA", "N"] # torsion
   - ["CD", "CG", "CB", "CA"] # torsion
   - ["CE", "CD", "CG", "CB"] # torsion
@@ -212,10 +171,6 @@ LYS:
   - ["HZ3", "NZ", "CE", "HZ2"] # improper
 
 MET:
-  - ["H", "N", "CA", "C"]
-  - ["O", "C", "CA", "N"]
-  - ["HA", "CA", "N", "C"]
-  - ["CB", "CA", "N", "C"] # ... improper
   - ["CG", "CB", "CA", "N"] # torsion
   - ["SD", "CG", "CB", "CA"] # torsion
   - ["CE", "SD", "CG", "CB"] # torsion
@@ -228,10 +183,6 @@ MET:
   - ["HE3", "CE", "SD", "HE2"] # improper
 
 THR:
-  - ["H", "N", "CA", "C"]
-  - ["O", "C", "CA", "N"]
-  - ["HA", "CA", "N", "C"]
-  - ["CB", "CA", "N", "C"] # ... improper
   - ["OG1", "CB", "CA", "N"] # torsion
   - ["CG2", "CB", "CA", "OG1"] # improper
   - ["HB", "CB", "CA", "OG1"] # improper
@@ -241,10 +192,6 @@ THR:
   - ["HG23", "CG2", "CB", "HG21"] # improper
 
 VAL:
-  - ["H", "N", "CA", "C"]
-  - ["O", "C", "CA", "N"]
-  - ["HA", "CA", "N", "C"]
-  - ["CB", "CA", "N", "C"] # ... improper
   - ["CG1", "CB", "CA", "N"] # torsion
   - ["CG2", "CB", "CA", "CG1"] # improper
   - ["HB", "CB", "CA", "CG1"] # improper
@@ -256,10 +203,6 @@ VAL:
   - ["HG23", "CG2", "CB", "HG21"] # improper
 
 PHE:
-  - ["H", "N", "CA", "C"]
-  - ["O", "C", "CA", "N"]
-  - ["HA", "CA", "N", "C"]
-  - ["CB", "CA", "N", "C"] # ... improper
   - ["CG", "CB", "CA", "N"] # torsion
   - ["CD1", "CG", "CB", "CA"] # torsion
   - ["CD2", "CG", "CB", "CD1"] # improper
