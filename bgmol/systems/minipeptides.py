@@ -67,7 +67,7 @@ class MiniPeptide(OpenMMSystem):
             "constraints", constraints, default=app.HBonds
         )
         self.solvated = self.system_parameter(
-            "solvated", solvated, default=True
+            "solvated", solvated, default=False
         )
         self.hydrogen_mass = self.system_parameter(
             "hydrogen_mass", hydrogen_mass, default=None
@@ -108,7 +108,7 @@ class MiniPeptide(OpenMMSystem):
             hydrogenMass=hydrogen_mass,
             rigidWater=True
         )
-        self._positions = pdb.positions
+        self._positions = pdb.getPositions(asNumpy=True).value_in_unit(unit.nanometer)
         self._topology = pdb.topology
 
     def _download(self, filename, root):

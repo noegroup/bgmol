@@ -52,13 +52,15 @@ class ZMatrixFactory:
 
     # === naive builder and helpers ===
 
-    def build_naive(self, subset="all"):
+    def build_naive(self, subset="all", render_independent=True):
         """Place atoms relative to the closest atoms that are already placed (wrt. bond topology).
 
         Parameters
         ----------
         subset : str or sequence of int
             A selection string or list of atoms. The z-matrix is only build for the subset.
+        render_independent : bool
+            Whether to make sure that no two positions depend on the same three other positions.
 
         Returns
         -------
@@ -87,6 +89,8 @@ class ZMatrixFactory:
                 if len(closest) == 3:
                     z.append([atom, *closest])
             self._z.extend(z)
+        if render_independent:
+            self.render_independent()
         return self.z_matrix, self.fixed
 
     @staticmethod
@@ -145,15 +149,18 @@ class ZMatrixFactory:
 
     # === template builder and helpers ===
 
-    def build_with_templates(self, yaml_file="z_protein.yaml", *yaml_files, build_protein_backbone=True, subset="all"):
+    def build_with_templates(
+            self,
+            *yaml_files,
+            build_protein_backbone=True,
+            subset="all"
+    ):
         """Build ICs from template files.
 
         Parameters
         ----------
-        yaml_file : str
-            filename of first template file (just so we can define a default)
         *yaml_files : str
-            filenames of any other template files
+            filenames of any other template files; if non are passed, use the bundled "z_protein.yaml", "z_termini.yaml"
         build_protein_backbone : bool
             Whether to build the protein backbone first
         subset : str or sequence of int
@@ -168,33 +175,37 @@ class ZMatrixFactory:
         z_matrix : np.ndarray
         fixed_atoms : np.ndarray
         """
+        if len(yaml_files) == 0:
+            yaml_files = ["z_protein.yaml", "z_termini.yaml"]
         subset = self._select(subset)
-        templates = self._load_templates(yaml_file, *yaml_files)
+        templates = self._load_templates(*yaml_files)
 
         # build_backbone
         if build_protein_backbone:
             self.build_naive(subset=np.intersect1d(self.top.select("backbone"), subset))
         # build residues
-        for i, residue in enumerate(self.top.residues):
+        residues = list(self.top.residues)
+        for i, residue in enumerate(residues):
             is_nterm = (i == 0) and residue.is_protein
             is_cterm = ((i + 1) == self.top.n_residues) and residue.is_protein
-
             resatoms = {a.name: a.index for a in residue.atoms}
-            resname = residue.name
-            for entry in templates[resname]:  # template entry:
-                if not self._is_placed(resatoms[entry[0]]):  # not in not_ic:
-                    self._z.append([resatoms[_e] for _e in entry])
 
-            if is_nterm:
-                # set two additional N-term protons
-                if "H2" in resatoms and not self._is_placed(resatoms["H2"]):  # not in not_ic:
-                    self._z.append([resatoms["H2"], resatoms["N"], resatoms["CA"], resatoms["H"]])
-                if "H3" in resatoms and not self._is_placed(resatoms["H3"]):  # not in not_ic:
-                    self._z.append([resatoms["H3"], resatoms["N"], resatoms["CA"], resatoms["H2"]])
-            elif is_cterm:
-                # place OXT
-                if "OXT" in resatoms and not self._is_placed(resatoms["OXT"]):  # not in not_ic:
-                    self._z.append([resatoms["OXT"], resatoms["C"], resatoms["CA"], resatoms["O"]])
+            # add termini definition
+            definitions = templates[residue.name]
+            if is_nterm and "NTERM" in templates:
+                definitions = definitions + templates["NTERM"]
+                resatoms_neighbor = {f"+{a.name}": a.index for a in residues[i+1].atoms}
+                resatoms.update(resatoms_neighbor)
+            if is_cterm and "CTERM" in templates:
+                definitions = definitions + templates["CTERM"]
+                resatoms_neighbor = {f"-{a.name}": a.index for a in residues[i-1].atoms}
+                resatoms.update(resatoms_neighbor)
+
+            for entry in definitions:  # template entry:
+                if any(e not in resatoms for e in entry):
+                    continue  # skip torsions with non-matching atom names
+                if resatoms[entry[0]] in subset and not self._is_placed(resatoms[entry[0]]):  # not in not_ic:
+                    self._z.append([resatoms[_e] for _e in entry])
 
         # append missing
         placed = np.array(list(self._placed_atoms()))
@@ -221,11 +232,15 @@ class ZMatrixFactory:
             for residue in templates:
                 if not isinstance(templates[residue], list):
                     raise IOError("File format is not acceptable.")
+                if "GENERAL" in templates:
+                    templates[residue] = [*templates["GENERAL"], *templates[residue]]
                 for torsion in templates[residue]:
                     if not len(torsion) == 4:
                         raise IOError(f"Torsion {torsion} in residue {residue} does not have 4 atoms.")
                     if not all(isinstance(name, str) for name in torsion):
                         raise IOError(f"Torsion {torsion} in residue {residue} does not consist of atom names.")
+            if "GENERAL" in templates:
+                del templates["GENERAL"]
             return templates
 
     def _load_templates(self, *yaml_files):
@@ -245,6 +260,53 @@ class ZMatrixFactory:
         Maybe: also do something regarding symmetries.
         """
         raise NotImplementedError()
+
+    def render_independent(self, keep=None):
+        """Rewire z matrix so that no two positions depend on the same bonded atom and angle/torsion
+
+        Parameters
+        ----------
+        keep : Sequence[int]
+            All atoms, whose placement should not be changed by any means.
+            By default, don't rewire CB to be able to control the chirality.
+        """
+        keep = "name CB" if keep is None else keep
+        keep = self._select(keep)
+        all234 = [(torsion[1], set(torsion[2:])) for torsion in self._z]
+        for i in range(len(self._z)):
+            torsion = self._z[i]
+            this234 = all234[i]
+            while this234 in all234[:i]:
+                previous_index = all234.index(this234)
+                previous_torsion = self._z[previous_index]
+                if torsion[0] in keep:
+                    assert not previous_torsion[0] in keep
+                    # swap
+                    self._z[i], self._z[previous_index] = previous_torsion, torsion
+                    all234[i], all234[previous_index] = all234[previous_index], all234[i]
+                    torsion = self._z[i]
+                    this234 = all234[i]
+                    continue
+                # make sure there are no circular dependencies
+                assert previous_torsion[0] not in torsion[:3]
+                assert torsion[0] not in previous_torsion
+                # rewire
+                new_torsion = torsion[:3] + previous_torsion[:1]
+                self._z[i] = new_torsion
+                this234 = set(new_torsion[2:])
+                all234[i] = this234
+            assert not this234 in all234[:i]
+            assert not self._z[i] in self._z[:i]
+        assert self.is_independent(self._z)
+        return self._z
+
+    @staticmethod
+    def is_independent(z):
+        all234 = [(torsion[1], set(torsion[2:])) for torsion in z]
+        for i, other in enumerate(all234):
+            if other in all234[:i]:
+                return False
+        return True
 
 
 def build_fake_topology(n_atoms, bonds=None, atoms_by_residue=None, coordinates=None):
