@@ -180,8 +180,8 @@ class ZMatrixFactory:
             is_cterm = ((i + 1) == self.top.n_residues) and residue.is_protein
 
             resatoms = {a.name: a.index for a in residue.atoms}
-            resname = residue.name
-            for entry in templates[resname]:  # template entry:
+
+            for entry in templates[residue.name]:  # template entry:
                 if not self._is_placed(resatoms[entry[0]]):  # not in not_ic:
                     self._z.append([resatoms[_e] for _e in entry])
 

@@ -247,7 +247,7 @@ class OpenMMToolsTestSystem(OpenMMSystem):
         self._testsystem = testsystem
         self._topology = testsystem.topology
         self._system = testsystem.system
-        self._positions = testsystem.positions
+        self._positions = testsystem.positions.value_in_unit(unit.nanometer)
         self._name = name
         # We register only the non-default arguments.
         # It's hard to track down the actual defaults even using the inspect module.
