@@ -3,7 +3,6 @@ import pytest
 from bgmol.systems import MiniPeptide, AMINO_ACIDS
 
 
-@pytest.mark.slow
 @pytest.mark.parametrize("aminoacid", AMINO_ACIDS)
 @pytest.mark.parametrize("solvated", [True, False])
 def test_monopeptide_systems(aminoacid, solvated):

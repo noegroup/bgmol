@@ -4,3 +4,4 @@ from .exceptions import *
 from .pkg import *
 from .ff import *
 from .chirality import *
+from .pdbpatch import *

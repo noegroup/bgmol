@@ -1,10 +1,10 @@
 import os
-import warnings
 import tempfile
 import numpy as np
 from bgmol.util.importing import import_openmm
 _, unit, app = import_openmm()
 from ..systems.base import OpenMMSystem
+from ..util.pdbpatch import fixed_atom_names
 from torchvision.datasets.utils import download_url
 
 __all__ = ["ChignolinC22Implicit"]
@@ -66,8 +66,9 @@ class ChignolinC22Implicit(OpenMMSystem):
         )
 
         # create system
-        psf = app.CharmmPsfFile(os.path.join(root, "structure.psf"))
-        crds = app.PDBFile(os.path.join(root, "structure.pdb"))
+        with fixed_atom_names(TYR=["HT1", "HT2", "HT3"]):
+            psf = app.CharmmPsfFile(os.path.join(root, "structure.psf"))
+            crds = app.PDBFile(os.path.join(root, "structure.pdb"))
         self._system = psf.createSystem(
             params,
             nonbondedMethod=app.NoCutoff,
@@ -75,7 +76,7 @@ class ChignolinC22Implicit(OpenMMSystem):
             hydrogenMass=hydrogen_mass,
             implicitSolvent=implicit_solvent
         )
-        self._positions = np.array(crds.positions.value_in_unit(unit.nanometer))
+        self._positions = crds.getPositions(asNumpy=True).value_in_unit(unit.nanometer)
         self._topology = psf.topology
 
         self._tica_mean, self._tica_eig = self._read_tica(root)
