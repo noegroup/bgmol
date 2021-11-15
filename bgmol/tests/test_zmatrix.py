@@ -23,6 +23,17 @@ def _check_trafo_complete(trafo, system):
         assert xyz.shape == xyz2.shape
 
 
+def _check_bonds_physical(zmatrix, topology):
+    # make sure that all bonds in the zmatrix are physical bonds
+    all_bonds = {
+        (bond.atom1.index, bond.atom2.index)
+        for bond in topology.bonds
+    }
+    for *b, _, _ in zmatrix:
+        if min(*b) > -1:
+            assert tuple(b) in all_bonds or tuple(reversed(b)) in all_bonds
+
+
 @pytest.mark.parametrize("system", [
     AlanineDipeptideImplicit(),
     ImplicitBPTI()
@@ -88,3 +99,15 @@ def test_z_factory_naive_cgn(chignolin):
     assert fixed.shape == (10, )
     assert z.shape == (165, 4)
 
+
+def test_z_factory_naive_cgn_global(chignolin):
+    top = chignolin.mdtraj_topology
+    factory = ZMatrixFactory(top)
+    z, _ = factory.build_with_templates()
+    atom_ids = [top.select(f"resid 9 and name {atom}")[0] for atom in ["CAT", "HT1", "HT2", "HT3"]]
+    torsion_ids = [np.where(z[:, 0] == atom_id)[0] for atom_id in atom_ids]
+    assert (np.array([atom_ids[1], atom_ids[0]]) == z[torsion_ids[1], :2]).all()
+    assert (np.array([atom_ids[2], atom_ids[0]]) == z[torsion_ids[2], :2]).all()
+    assert (np.array([atom_ids[3], atom_ids[0]]) == z[torsion_ids[3], :2]).all()
+
+    _check_bonds_physical(z, top)

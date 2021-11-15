@@ -37,10 +37,6 @@ CTERM:
   # CHARMM36m style standard C-terminus
   - ["OT1", "C", "CA", "N"]
   - ["OT2", "C", "CA", "OT1"]
-  # CHARMM36m style CONH2
-  - ["NT", "C", "CA", "O"]
-  - ["HT1", "NT", "C", "CA"]
-  - ["HT2",  "NT", "C", "HT1"]
   # CHARMM36m style NME
   - ["NT", "C", "CA", "N"]
   - ["CAT", "NT", "C", "CA"]
@@ -48,6 +44,10 @@ CTERM:
   - ["HT1", "CAT", "NT", "C"]
   - ["HT2", "CAT", "NT", "HT1"]
   - ["HT3", "CAT", "NT", "HT2"]
+  # CHARMM36m style CONH2
+  - ["NT", "C", "CA", "O"]
+  - ["HT1", "NT", "C", "CA"]
+  - ["HT2",  "NT", "C", "HT1"]
 
 NME:
   - ["N", "-C", "-CA", "-N"]
