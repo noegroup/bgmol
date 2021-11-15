@@ -3,5 +3,5 @@ from .constraints import *
 from .exceptions import *
 from .pkg import *
 from .ff import *
-from .chirality import *
+from .topology import *
 from .pdbpatch import *
