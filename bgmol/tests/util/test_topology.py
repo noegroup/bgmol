@@ -1,7 +1,8 @@
 import pytest
+import numpy as np
 from bgmol.systems.ala2 import DEFAULT_GLOBAL_Z_MATRIX
-from bgmol.systems import MiniPeptide
-from bgmol.util import rewire_chiral_torsions, find_rings, is_proper_torsion
+from bgmol.systems import MiniPeptide, ChignolinC22Implicit
+from bgmol.util import rewire_chiral_torsions, find_rings, is_proper_torsion, is_chiral_torsion
 from bgmol.zmatrix import ZMatrixFactory
 
 
@@ -42,7 +43,7 @@ def test_proper_torsions(ala2dataset):
     top = ala2dataset.system.mdtraj_topology
     torsions = (
         ["CB", "CA", "N", "C"],  # improper
-        ["HA", "CA", "N", "CB"],  # improper
+        ["HA", "CA", "N", "C"],  # improper
         ["O", "C", "CA", "CB"],  # proper
         ["H", "N", "CA", "HA"],  # proper
     )
@@ -57,8 +58,18 @@ def test_proper_torsions(ala2dataset):
 @pytest.mark.parametrize("build_naive", [True, False])
 def test_rewire_torsions(build_naive):
     top = MiniPeptide("A").mdtraj_topology
-    zmatrix = ZMatrixFactory(top).build_naive()[0] if build_naive else DEFAULT_GLOBAL_Z_MATRIX
-    zmat, indices = rewire_chiral_torsions(zmatrix, top)
+    z = ZMatrixFactory(top).build_naive()[0] if build_naive else DEFAULT_GLOBAL_Z_MATRIX
+    z = rewire_chiral_torsions(z, top)
+    indices = np.where(is_chiral_torsion(z, top))[0]
     assert len(indices) == 1
-    for atom, name in zip(zmat[indices[0]], ("CB", "CA", "N", "C")):
+    for atom, name in zip(z[indices[0]], ("HA", "CA", "N", "C")):
         assert top.atom(atom).name == name
+
+
+def test_rewire_torsions_valid_after():
+    bgflow = pytest.importorskip("bgflow")
+    top = ChignolinC22Implicit().mdtraj_topology
+    z = ZMatrixFactory(top).build_naive()[0]
+    z = rewire_chiral_torsions(z, top)
+    bgflow.GlobalInternalCoordinateTransformation(z)
+

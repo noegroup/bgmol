@@ -1,7 +1,7 @@
 GENERAL:
   - ["CB", "CA", "N", "C"]
   - ["O", "C", "CA", "CB"]
-  - ["HA", "CA", "N", "CB"]
+  - ["HA", "CA", "N", "C"]
   - ["H", "N", "CA", "HA"]
 
 ALA:
