@@ -67,7 +67,7 @@ def _select_ha(mdtraj_topology: md.Topology):
         ca = neighbors[0]
         if ca.name != "CA":
             continue
-        neighbors = graph.neighbors(ca)
+        neighbors = list(graph.neighbors(ca))
         if all(neighbor.element.symbol != "C" for neighbor in neighbors):
             continue
         if all(neighbor.element.symbol != "N" for neighbor in neighbors):
@@ -128,15 +128,15 @@ def rewire_chiral_torsions(z_matrix: np.ndarray, mdtraj_topology: md.Topology, v
         chiral_torsion = np.array(chiral_torsion)
         if (chiral_torsion == torsion).all():
             continue
-
         # replace torsion by chiral_torsion
         if verbose:
             print(f"replace torsion {torsion} by {chiral_torsion}")
+
         # remove circular dependencies
         for other_atom in chiral_torsion[1:]:
             if other_atom not in z_matrix[:, 0]:
                 continue
-            other_index = np.where(z_matrix[:, 0] == other_atom)[0]
+            other_index = np.where(z_matrix[:, 0] == other_atom)[0][0]
             if ha in z_matrix[other_index, 1:]:
                 replace_with_atoms_from_torsion = ha
                 replaced = False
@@ -147,7 +147,10 @@ def rewire_chiral_torsions(z_matrix: np.ndarray, mdtraj_topology: md.Topology, v
                     except IndexError:
                         replace_with_atoms_from_torsion = z_matrix[replace_with_atoms_from_torsion][1]
                         continue
-                    atom_index = np.where(z_matrix[other_index] == ha)[0]
+                    atom_index = np.where(z_matrix[other_index] == ha)[0][0]
+                    if verbose:
+                        print(f"- change {z_matrix[other_index]} to {replacement} at index {atom_index}")
                     z_matrix[other_index, atom_index] = replacement
-            z_matrix[torsion_index] = chiral_torsion
+
+        z_matrix[torsion_index] = chiral_torsion
     return z_matrix
