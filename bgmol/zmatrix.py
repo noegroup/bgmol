@@ -196,7 +196,7 @@ class ZMatrixFactory:
 
         # build_backbone
         if build_protein_backbone:
-            self.build_naive(subset=np.intersect1d(self.top.select("backbone"), subset))
+            self.build_naive(subset=np.intersect1d(self.top.select("backbone and element != O"), subset))
         # build residues
         residues = list(self.top.residues)
         for i, residue in enumerate(residues):
