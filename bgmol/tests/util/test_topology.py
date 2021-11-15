@@ -58,7 +58,7 @@ def test_proper_torsions(ala2dataset):
 @pytest.mark.parametrize("build_naive", [True, False])
 def test_rewire_torsions(build_naive):
     top = MiniPeptide("A").mdtraj_topology
-    z = ZMatrixFactory(top).build_naive()[0] if build_naive else DEFAULT_GLOBAL_Z_MATRIX
+    z = ZMatrixFactory(top).build_naive(rewire_chiral=True)[0] if build_naive else DEFAULT_GLOBAL_Z_MATRIX
     z = rewire_chiral_torsions(z, top, verbose=False)
     indices = np.where(is_chiral_torsion(z, top))[0]
     assert len(indices) == 1
@@ -69,8 +69,8 @@ def test_rewire_torsions(build_naive):
 def test_rewire_torsions_valid_after():
     bgflow = pytest.importorskip("bgflow")
     top = ChignolinC22Implicit().mdtraj_topology
-    z = ZMatrixFactory(top).build_naive()[0]
-    z = rewire_chiral_torsions(z, top, verbose=False)
+    z = ZMatrixFactory(top).build_naive(rewire_chiral=True)[0]
+    #z = rewire_chiral_torsions(z, top, verbose=False)
     trafo = bgflow.GlobalInternalCoordinateTransformation(z)
     assert is_chiral_torsion(trafo.torsion_indices, top).sum() == 9  # one less for GLY
 

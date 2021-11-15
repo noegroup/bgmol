@@ -73,7 +73,7 @@ def _select_ha(mdtraj_topology: md.Topology):
         if all(neighbor.element.symbol != "N" for neighbor in neighbors):
             continue
         indices.append(ha)
-    return indices
+    return np.array(indices)
 
 
 def is_chiral_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: md.Topology):
@@ -105,7 +105,11 @@ def rewire_chiral_torsions(z_matrix: np.ndarray, mdtraj_topology: md.Topology, v
     -----
     The indices do not correspond directly to indices
     """
+    if len(z_matrix) == 0:
+        return z_matrix
     halphas = _select_ha(mdtraj_topology)
+    halphas = np.intersect1d(halphas, z_matrix[:, 0])
+
     found_torsions = []
     for ha in halphas:
         indices = []
@@ -115,6 +119,7 @@ def rewire_chiral_torsions(z_matrix: np.ndarray, mdtraj_topology: md.Topology, v
                     indices.append(i)
         if len(indices) != 1:
             warnings.warn(f"Coordinate transform's z-matrix has no unique torsion with HA (index: {ha})")
+            continue
         found_torsions.append((ha, indices[0]))
 
     for ha, torsion_index in found_torsions:
