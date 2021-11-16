@@ -1,6 +1,8 @@
 from contextlib import contextmanager
 from .importing import import_openmm
-mm, util, app = import_openmm()
+_, _, app = import_openmm()
+
+__all__ = ["fixed_atom_names"]
 
 
 @contextmanager
