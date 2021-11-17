@@ -1,7 +1,7 @@
 GENERAL:
   - ["CB", "CA", "N", "C"]
   - ["O", "C", "CA", "CB"]
-  - ["HA", "CA", "N", "CB"]
+  - ["HA", "CA", "N", "C"]
   - ["H", "N", "CA", "HA"]
 
 ALA:
@@ -109,6 +109,7 @@ GLU:
   - ["HG3", "CG", "CB", "HG2"] # improper
 
 GLY:
+  - ["O", "C", "CA", "HA2"]
   # Amber style
   - ["HA2", "CA", "N", "C"]
   - ["HA3", "CA", "C", "HA2"]

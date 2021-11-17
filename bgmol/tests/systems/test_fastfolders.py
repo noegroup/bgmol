@@ -2,7 +2,7 @@ import pytest
 import warnings
 from bgmol.zmatrix import ZMatrixFactory
 from bgflow import GlobalInternalCoordinateTransformation
-from ..test_zmatrix import _check_trafo_complete
+from ..test_zmatrix import _check_trafo_complete, _check_bonds_physical
 
 
 def test_fastfolder_systems(fastfolder_system):
@@ -28,13 +28,7 @@ def test_z_factory_fastfolders(fastfolder_system):
         zmatrix, _ = factory.build_with_templates()
 
     # make sure that all bonds in the zmatrix are physical bonds
-    all_bonds = {
-        (bond.atom1.index, bond.atom2.index)
-        for bond in fastfolder_system.mdtraj_topology.bonds
-    }
-    for *b, _, _ in zmatrix:
-        if min(*b) > -1:
-            assert tuple(b) in all_bonds or tuple(reversed(b)) in all_bonds
+    _check_bonds_physical(zmatrix, fastfolder_system.mdtraj_topology)
 
     # check trafo
     trafo = GlobalInternalCoordinateTransformation(zmatrix)

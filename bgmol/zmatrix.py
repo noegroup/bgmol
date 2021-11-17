@@ -6,7 +6,8 @@ from copy import copy
 import numpy as np
 import mdtraj as md
 import yaml
-from .util import get_data_file
+from .util import get_data_file, rewire_chiral_torsions
+from .util.topology import _select_ha
 
 
 __all__ = ["ZMatrixFactory", "build_fake_topology"]
@@ -38,6 +39,15 @@ class ZMatrixFactory:
     def z_matrix(self):
         return np.array(self._z).astype(np.int64)
 
+    @z_matrix.setter
+    def z_matrix(self, value):
+        if isinstance(value, list):
+            self._z = value
+        elif isinstance(value, np.ndarray):
+            self._z = value.tolist()
+        else:
+            raise ValueError(f"Can't set z_matrix to {value}")
+
     @property
     def fixed(self):
         return np.array(self._cartesian).astype(np.int64)
@@ -52,7 +62,7 @@ class ZMatrixFactory:
 
     # === naive builder and helpers ===
 
-    def build_naive(self, subset="all", render_independent=True):
+    def build_naive(self, subset="all", render_independent=True, rewire_chiral=True, verbose=False):
         """Place atoms relative to the closest atoms that are already placed (wrt. bond topology).
 
         Parameters
@@ -61,6 +71,8 @@ class ZMatrixFactory:
             A selection string or list of atoms. The z-matrix is only build for the subset.
         render_independent : bool
             Whether to make sure that no two positions depend on the same three other positions.
+        rewire_chiral : bool
+            Whether to make sure that all HA depend on (CA, N, C).
 
         Returns
         -------
@@ -89,8 +101,10 @@ class ZMatrixFactory:
                 if len(closest) == 3:
                     z.append([atom, *closest])
             self._z.extend(z)
+        if rewire_chiral:
+            self.z_matrix = rewire_chiral_torsions(self.z_matrix, self.top, verbose=verbose)
         if render_independent:
-            self.render_independent()
+            self.render_independent(keep=_select_ha(self.top))
         return self.z_matrix, self.fixed
 
     @staticmethod
@@ -182,7 +196,7 @@ class ZMatrixFactory:
 
         # build_backbone
         if build_protein_backbone:
-            self.build_naive(subset=np.intersect1d(self.top.select("backbone"), subset))
+            self.build_naive(subset=np.intersect1d(self.top.select("backbone and element != O"), subset))
         # build residues
         residues = list(self.top.residues)
         for i, residue in enumerate(residues):
@@ -270,7 +284,7 @@ class ZMatrixFactory:
             All atoms, whose placement should not be changed by any means.
             By default, don't rewire CB to be able to control the chirality.
         """
-        keep = "name CB" if keep is None else keep
+        keep = _select_ha() if keep is None else keep
         keep = self._select(keep)
         all234 = [(torsion[1], set(torsion[2:])) for torsion in self._z]
         for i in range(len(self._z)):
@@ -297,7 +311,8 @@ class ZMatrixFactory:
                 all234[i] = this234
             assert not this234 in all234[:i]
             assert not self._z[i] in self._z[:i]
-        assert self.is_independent(self._z)
+        if not self.is_independent(self._z):
+            warnings.warn("Z-matrix torsions are not fully independent because of a constraint on HA.")
         return self._z
 
     @staticmethod

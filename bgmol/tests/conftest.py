@@ -103,4 +103,3 @@ def dtype(request, device):
 @pytest.fixture()
 def ctx(dtype, device):
     return {"dtype": dtype, "device": device}
-

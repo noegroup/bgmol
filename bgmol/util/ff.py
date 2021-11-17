@@ -161,7 +161,6 @@ def torsion_marginal_cdf_estimate(
         "Torsional marginal estimates are beta and may fail. "
         "This function depends on functionality that is not in the bgflow main branch."
     )
-
     if isinstance(discrete_torsions, int):
         discrete_torsions = np.linspace(-np.pi, np.pi, discrete_torsions + 1)
     if isinstance(discrete_torsions, np.ndarray):
