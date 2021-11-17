@@ -5,7 +5,7 @@ import numpy as np
 import mdtraj as md
 
 
-__all__ = ["rewire_chiral_torsions", "find_rings", "is_proper_torsion", "is_chiral_torsion"]
+__all__ = ["rewire_chiral_torsions", "find_rings", "is_proper_torsion", "is_chiral_torsion", "is_ring_torsion"]
 
 
 def find_rings(mdtraj_topology: md.Topology):
@@ -20,6 +20,23 @@ def find_rings(mdtraj_topology: md.Topology):
     graph = mdtraj_topology.to_bondgraph()
     cycles = nx.cycle_basis(graph)
     return [[atom.index for atom in ring] for ring in cycles]
+
+
+def is_ring_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: md.Topology):
+    """Whether torsions are part of defining a ring.
+
+    Returns
+    -------
+    is_ring : np.ndarray
+        A boolean array which contains 1 for torsions of ring atoms and 0 for others
+    """
+    is_ring = np.zeros(len(torsions), dtype=bool)
+    rings = find_rings(mdtraj_topology)
+    ring_atoms = set(atom for ring in rings for atom in ring)
+    for i, torsion in enumerate(torsions):
+        if torsion[0] in ring_atoms and any(atom in ring_atoms for atom in torsion[1:]):
+            is_ring[i] = True
+    return is_ring
 
 
 def is_proper_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: md.Topology):

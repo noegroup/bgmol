@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from bgmol.systems.ala2 import DEFAULT_GLOBAL_Z_MATRIX
 from bgmol.systems import MiniPeptide, ChignolinC22Implicit
-from bgmol.util import rewire_chiral_torsions, find_rings, is_proper_torsion, is_chiral_torsion
+from bgmol.util import rewire_chiral_torsions, find_rings, is_proper_torsion, is_chiral_torsion, is_ring_torsion
 from bgmol.zmatrix import ZMatrixFactory
 
 
@@ -74,3 +74,22 @@ def test_rewire_torsions_valid_after():
     trafo = bgflow.GlobalInternalCoordinateTransformation(z)
     assert is_chiral_torsion(trafo.torsion_indices, top).sum() == 9  # one less for GLY
 
+
+def test_is_ring_torsion():
+    top = MiniPeptide("Y").mdtraj_topology
+    z = ZMatrixFactory(top).build_with_templates()[0]
+    is_ring = is_ring_torsion(z, top)
+    assert is_ring.sum() == 5
+    atoms = z[is_ring, 0]
+    atomnames = [top.atom(i).name for i in atoms]
+    assert set(atomnames) == {"CE2", "CE1", "CD1", "CD2", "CZ"}
+
+    top = MiniPeptide("W").mdtraj_topology
+    z = ZMatrixFactory(top).build_with_templates()[0]
+    is_ring = is_ring_torsion(z, top)
+    assert is_ring.sum() == 8
+
+    top = ChignolinC22Implicit().mdtraj_topology
+    z = ZMatrixFactory(top).build_with_templates()[0]
+    is_ring = is_ring_torsion(z, top)
+    assert is_ring.sum() == 4 + 3 * 5 + 8  # 1 PRO, 3 TYR, 1 TRP
