@@ -32,10 +32,16 @@ def is_ring_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: md.Topol
     """
     is_ring = np.zeros(len(torsions), dtype=bool)
     rings = find_rings(mdtraj_topology)
-    ring_atoms = set(atom for ring in rings for atom in ring)
     for i, torsion in enumerate(torsions):
-        if torsion[0] in ring_atoms and any(atom in ring_atoms for atom in torsion[1:]):
-            is_ring[i] = True
+        # checking whether the atom that is placed by this torsion is part of any rings
+        ring_indices = [j for j, ring in enumerate(rings) if torsion[0] in ring]
+        if len(ring_indices) == 0:
+            continue
+        # checking whether any other atom in this torsion is part of the same ring
+        for ring_index in ring_indices:
+            if any(atom in rings[ring_index] for atom in torsion[1:]):
+                is_ring[i] = True
+                continue
     return is_ring
 
 
