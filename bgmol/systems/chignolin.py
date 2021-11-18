@@ -101,8 +101,8 @@ class ChignolinC22Implicit(OpenMMSystem):
         "chignolin_tica.npz": "9623ea5b73f48b6952db666d586a27d6"
     }
 
-    def to_tics(self, xs, eigs_kept=None):
-        c_alpha = self.mdtraj_topology.select("name == CA")
+    def to_tics(self, xs, eigs_kept=None, c_alpha=None):
+        c_alpha = self.mdtraj_topology.select("name == CA") if c_alpha is None else c_alpha
         xs = xs.reshape(xs.shape[0], -1, 3)
         xs = xs[:, c_alpha, :]
         if eigs_kept is None:
