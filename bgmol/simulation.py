@@ -1,8 +1,7 @@
 
 
-from simtk import openmm as mm
-from simtk import unit
-
+from bgmol.util.importing import import_openmm
+mm, unit, app = import_openmm()
 from .tpl.hdf5 import HDF5Reporter
 
 

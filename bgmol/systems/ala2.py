@@ -1,7 +1,8 @@
 import os
 import tempfile
 import numpy as np
-from simtk.openmm import app
+from bgmol.util.importing import import_openmm
+_, unit, app = import_openmm()
 import mdtraj as md
 from ..systems.base import OpenMMToolsTestSystem, OpenMMSystem
 from torchvision.datasets.utils import download_url
@@ -90,7 +91,7 @@ class AlanineDipeptideTSF(OpenMMSystem):
             constraints=app.HBonds,
             rigidWater=True
         )
-        self._positions = pdb.getPositions(asNumpy=True)
+        self._positions = pdb.getPositions(asNumpy=True).value_in_unit(unit.nanometer)
         self._topology = pdb.getTopology()
         self.z_matrix = DEFAULT_Z_MATRIX.copy()
         self.rigid_block = DEFAULT_RIGID_BLOCK.copy()

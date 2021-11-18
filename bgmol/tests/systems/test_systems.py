@@ -4,8 +4,9 @@ import pytest
 
 from bgmol.systems import *
 
-from simtk.openmm import Context, VerletIntegrator, Platform
-from simtk import unit
+from bgmol.util.importing import import_openmm
+mm, unit, app = import_openmm()
+
 import numpy as np
 
 # ===== general tests ======
@@ -23,12 +24,13 @@ def test_num_particles(system_instance):
     assert num_particles > 0
     assert system_instance.mdtraj_topology.n_atoms == num_particles
     assert len(system_instance.positions) == num_particles
+    assert isinstance(system_instance.positions, np.ndarray)
 
 
 def test_energy_calculation(system_instance):
     """test calculation of initial energy"""
-    platform = Platform.getPlatformByName("Reference")
-    context = Context(system_instance.system, VerletIntegrator(0.001), platform)
+    platform = mm.Platform.getPlatformByName("Reference")
+    context = mm.Context(system_instance.system, mm.VerletIntegrator(0.001), platform)
     context.setPositions(system_instance.positions)
     state = context.getState(getEnergy=True)
     energy = state.getPotentialEnergy().value_in_unit(unit.kilojoule_per_mole)

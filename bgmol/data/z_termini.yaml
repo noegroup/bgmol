@@ -1,0 +1,58 @@
+
+# + stands for next residue
+# - stands for previous residue
+
+# ==== N termini ====
+
+NTERM:  # n-termini that are defined within the same residue
+  # CHARMM22* style standard N-termini
+  - ["H2", "N", "CA", "H"]
+  - ["H3", "N", "CA", "H2"]
+  # CHARMM36m style standard N-termini
+  - ["HT1", "N", "CA", "C"]
+  - ["HT2", "N", "CA", "HT1"]
+  - ["HT3", "N", "CA", "HT2"]
+  # CHARMM 22 style ACE
+  - ["CY", "N", "CA", "C"]
+  - ["OY", "CY", "N", "CA"]
+  - ["CAY", "CY", "N", "OY"]
+  - ["HY1", "CAY", "CY", "O"]
+  - ["HY2", "CAY", "CY", "HY1"]
+  - ["HY3", "CAY", "CY", "HY2"]
+
+ACE:
+  - ["C", "+N", "+CA", "+C"]
+  - ["O", "C", "+N", "+CA"]
+  - ["CH3", "C", "+N", "O"]
+  - ["H1", "CH3", "C", "O"]
+  - ["H2", "CH3", "C", "H1"]
+  - ["H3", "CH3", "C", "H2"]
+
+
+# ==== C termini ====
+
+CTERM:
+  # CHARMM22* style standard C-terminus
+  - ["OXT", "C", "CA", "O"]
+  # CHARMM36m style standard C-terminus
+  - ["OT1", "C", "CA", "N"]
+  - ["OT2", "C", "CA", "OT1"]
+  # CHARMM36m style NME
+  - ["NT", "C", "CA", "N"]
+  - ["CAT", "NT", "C", "CA"]
+  - ["HNT", "NT", "C", "CAT"]
+  - ["HT1", "CAT", "NT", "C"]
+  - ["HT2", "CAT", "NT", "HT1"]
+  - ["HT3", "CAT", "NT", "HT2"]
+  # CHARMM36m style CONH2
+  - ["NT", "C", "CA", "O"]
+  - ["HT1", "NT", "C", "CA"]
+  - ["HT2",  "NT", "C", "HT1"]
+
+NME:
+  - ["N", "-C", "-CA", "-N"]
+  - ["C", "N", "-C", "-CA"]
+  - ["H", "N", "-C", "C"]
+  - ["H1", "C", "N", "-C"]
+  - ["H2", "C", "N", "H1"]
+  - ["H3", "C", "N", "H2"]

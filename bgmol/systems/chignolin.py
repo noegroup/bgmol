@@ -1,10 +1,10 @@
 import os
-import warnings
 import tempfile
 import numpy as np
-from simtk import unit
-from simtk.openmm import app
+from bgmol.util.importing import import_openmm
+_, unit, app = import_openmm()
 from ..systems.base import OpenMMSystem
+from ..util.pdbpatch import fixed_atom_names
 from torchvision.datasets.utils import download_url
 
 __all__ = ["ChignolinC22Implicit"]
@@ -59,17 +59,16 @@ class ChignolinC22Implicit(OpenMMSystem):
             assert os.path.isfile(os.path.join(root, sourcefile))
 
         # Load the CHARMM files
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")  # I don't want to see warnings about mixin force field
-            params = app.CharmmParameterSet(
-                os.path.join(root, "top_all22star_prot.rtf"),
-                os.path.join(root, "top_water_ions.rtf"),
-                os.path.join(root, "parameters_ak.prm")
-            )
+        params = app.CharmmParameterSet(
+            os.path.join(root, "top_all22star_prot.rtf"),
+            os.path.join(root, "top_water_ions.rtf"),
+            os.path.join(root, "parameters_ak_dihefix.prm")
+        )
 
         # create system
-        psf = app.CharmmPsfFile(os.path.join(root, "structure.psf"))
-        crds = app.PDBFile(os.path.join(root, "structure.pdb"))
+        with fixed_atom_names(TYR=["HT1", "HT2", "HT3"]):
+            psf = app.CharmmPsfFile(os.path.join(root, "structure.psf"))
+            crds = app.PDBFile(os.path.join(root, "structure.pdb"))
         self._system = psf.createSystem(
             params,
             nonbondedMethod=app.NoCutoff,
@@ -77,7 +76,7 @@ class ChignolinC22Implicit(OpenMMSystem):
             hydrogenMass=hydrogen_mass,
             implicitSolvent=implicit_solvent
         )
-        self._positions = np.array(crds.positions.value_in_unit(unit.nanometer))
+        self._positions = crds.getPositions(asNumpy=True).value_in_unit(unit.nanometer)
         self._topology = psf.topology
 
         self._tica_mean, self._tica_eig = self._read_tica(root)
@@ -94,7 +93,7 @@ class ChignolinC22Implicit(OpenMMSystem):
         return npz["tica_mean"], npz["tica_eigenvectors"]
 
     FILES = {
-        "parameters_ak.prm": "d953daf4925e4146a5fcece875ee4e57",
+        "parameters_ak_dihefix.prm": "f712c2392fdf892e43341fed64305ba8",
         "structure.pdb": "be19629a75e0ee4e1cc3c72a9ebc63c6",
         "structure.psf": "944b26edb992c7dbdaa441675b9e42c5",
         "top_all22star_prot.rtf": "d046c9a998369be142a6470fd5bb3de1",
@@ -102,8 +101,8 @@ class ChignolinC22Implicit(OpenMMSystem):
         "chignolin_tica.npz": "9623ea5b73f48b6952db666d586a27d6"
     }
 
-    def to_tics(self, xs, eigs_kept=None):
-        c_alpha = self.mdtraj_topology.select("name == CA")
+    def to_tics(self, xs, eigs_kept=None, c_alpha=None):
+        c_alpha = self.mdtraj_topology.select("name == CA") if c_alpha is None else c_alpha
         xs = xs.reshape(xs.shape[0], -1, 3)
         xs = xs[:, c_alpha, :]
         if eigs_kept is None:

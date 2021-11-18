@@ -2,13 +2,10 @@
 import os
 import numpy as np
 
-from simtk import unit
-from simtk.openmm.app import HBonds
-from simtk.openmm import LangevinIntegrator, Platform
-
 from .base import DataSet
 from ..systems.chignolin import ChignolinC22Implicit
-from ..tpl.hdf5 import load_hdf5, HDF5TrajectoryFile
+
+__all__ = ["ChignolinOBC2PT"]
 
 
 class ChignolinOBC2PT(DataSet):

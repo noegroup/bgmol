@@ -4,7 +4,10 @@ from bgmol.datasets.base import DataSet
 from bgmol.api import system_by_name
 from bgmol.tpl.hdf5 import HDF5TrajectoryFile, load_hdf5
 
-__all__ = ["Ala2Implicit300", "Ala2Implicit1000", "Ala2TSF300", "Ala2TSF600", "Ala2TSF1000"]
+__all__ = [
+    "Ala2Implicit300", "Ala2Implicit1000", "Ala2Implicit1000Test",
+    "Ala2TSF300", "Ala2TSF600", "Ala2TSF1000"
+]
 
 
 class Ala2Implicit300(DataSet):
@@ -40,7 +43,7 @@ class Ala2Implicit300(DataSet):
 
 
 class Ala2Implicit1000(DataSet):
-    """AlanineDipeptideImplicit at 300 K.
+    """AlanineDipeptideImplicit at 1000 K.
     1 ms Langevin dynamics with 1/ps friction coefficient and 2fs time step,
     output spaced in 10 ps intervals.
     """
@@ -69,6 +72,23 @@ class Ala2Implicit1000(DataSet):
         self._energies = frames.potentialEnergy
         self._forces = frames.forces
         f.close()
+
+
+class Ala2Implicit1000Test(Ala2Implicit1000):
+    """AlanineDipeptideImplicit at 1000 K with only 11 snapshots for testing.
+    """
+    url = "http://ftp.mi.fu-berlin.de/pub/cmb-data/bgmol/datasets/ala2/Ala2Implicit1000Test.tgz"
+    md5 = "9384d96183657cc1217bdf085221cae5"
+    num_frames = 11
+    size = 11795  # in bytes
+    selection = "all"
+    openmm_version = "7.5.1"
+    date = "2021/08/25"
+    author = "Andreas Krämer"
+
+    @property
+    def trajectory_file(self):
+        return os.path.join(self.root, "Ala2Implicit1000Test/traj0.h5")
 
 
 class Ala2TSF300(DataSet):

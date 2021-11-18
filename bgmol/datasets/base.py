@@ -3,7 +3,10 @@ import os
 import numpy as np
 import mdtraj as md
 from bgmol.tpl.hdf5 import load_hdf5, HDF5TrajectoryFile
-from simtk.openmm import LangevinIntegrator
+
+from ..util.importing import import_openmm
+mm, unit, app = import_openmm()
+
 from torchvision.datasets.utils import download_and_extract_archive
 
 __all__ = ["DataSet"]
