@@ -157,6 +157,7 @@ def test_torsion_energies():
 
 @pytest.mark.parametrize("normalize", [True, False])
 def test_torsion_marginal_estimate(ala2dataset, ctx, normalize):
+    pytest.importorskip("bgflow.nn.flow.spline.PeriodicTabulatedTransform")
     crd_trafo = GlobalInternalCoordinateTransformation(
         DEFAULT_GLOBAL_Z_MATRIX, normalize_angles=normalize
     ).to(**ctx)

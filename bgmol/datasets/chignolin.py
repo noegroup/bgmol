@@ -4,7 +4,8 @@ import numpy as np
 
 from .base import DataSet
 from ..systems.chignolin import ChignolinC22Implicit
-from ..tpl.hdf5 import load_hdf5, HDF5TrajectoryFile
+
+__all__ = ["ChignolinOBC2PT"]
 
 
 class ChignolinOBC2PT(DataSet):

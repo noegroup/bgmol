@@ -9,6 +9,11 @@ import pytest
 @pytest.mark.parametrize("name", list_openmmtools_systems())
 def test_openmmtools_system(name):
     """Test if all openmmtools systems work with default parameters."""
+    if name == "DHFRExplicit":
+        try:
+            import parmed
+        except ImportError:
+            pytest.skip("requires parmed")
     testsystem = OpenMMToolsTestSystem(name)
     assert testsystem.system.getNumParticles() > 0
     assert testsystem.name == name

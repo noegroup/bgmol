@@ -1,10 +1,10 @@
 import os
-import warnings
 import tempfile
 import numpy as np
 from bgmol.util.importing import import_openmm
 _, unit, app = import_openmm()
 from ..systems.base import OpenMMSystem
+from ..util.pdbpatch import fixed_atom_names
 from torchvision.datasets.utils import download_url
 
 __all__ = ["ChignolinC22Implicit"]
@@ -66,8 +66,9 @@ class ChignolinC22Implicit(OpenMMSystem):
         )
 
         # create system
-        psf = app.CharmmPsfFile(os.path.join(root, "structure.psf"))
-        crds = app.PDBFile(os.path.join(root, "structure.pdb"))
+        with fixed_atom_names(TYR=["HT1", "HT2", "HT3"]):
+            psf = app.CharmmPsfFile(os.path.join(root, "structure.psf"))
+            crds = app.PDBFile(os.path.join(root, "structure.pdb"))
         self._system = psf.createSystem(
             params,
             nonbondedMethod=app.NoCutoff,
@@ -75,7 +76,7 @@ class ChignolinC22Implicit(OpenMMSystem):
             hydrogenMass=hydrogen_mass,
             implicitSolvent=implicit_solvent
         )
-        self._positions = np.array(crds.positions.value_in_unit(unit.nanometer))
+        self._positions = crds.getPositions(asNumpy=True).value_in_unit(unit.nanometer)
         self._topology = psf.topology
 
         self._tica_mean, self._tica_eig = self._read_tica(root)
@@ -100,8 +101,8 @@ class ChignolinC22Implicit(OpenMMSystem):
         "chignolin_tica.npz": "9623ea5b73f48b6952db666d586a27d6"
     }
 
-    def to_tics(self, xs, eigs_kept=None):
-        c_alpha = self.mdtraj_topology.select("name == CA")
+    def to_tics(self, xs, eigs_kept=None, c_alpha=None):
+        c_alpha = self.mdtraj_topology.select("name == CA") if c_alpha is None else c_alpha
         xs = xs.reshape(xs.shape[0], -1, 3)
         xs = xs[:, c_alpha, :]
         if eigs_kept is None:

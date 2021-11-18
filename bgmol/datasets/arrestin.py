@@ -2,12 +2,10 @@ import os
 import numpy as np
 from bgmol.datasets.base import DataSet
 from bgmol.api import system_by_name
-from bgmol.tpl.hdf5 import HDF5TrajectoryFile, load_hdf5
-import pickle5 as pickle
 from mdtraj import load_dcd
 
 
-__all__ = ["ArrestinActive", "ArrestinInactive"]
+__all__ = ["ArrestinActive"]
 
 
 class ArrestinActive(DataSet):
