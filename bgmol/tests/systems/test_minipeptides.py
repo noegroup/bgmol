@@ -16,3 +16,6 @@ def test_monopeptide_systems(aminoacid, solvated):
 def test_dipeptide_systems(aminoacid1, aminoacid2, solvated):
     MiniPeptide(f"{aminoacid1}{aminoacid2}", solvated=solvated)
 
+
+def test_aaa_system():
+    MiniPeptide(f"AAA")
