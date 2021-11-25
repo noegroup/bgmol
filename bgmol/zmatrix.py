@@ -203,17 +203,19 @@ class ZMatrixFactory:
             is_nterm = (i == 0) and residue.is_protein
             is_cterm = ((i + 1) == self.top.n_residues) and residue.is_protein
             resatoms = {a.name: a.index for a in residue.atoms}
+            if not is_cterm:
+                resatoms_neighbor = {f"+{a.name}": a.index for a in residues[i+1].atoms}
+                resatoms.update(resatoms_neighbor)
+            if not is_nterm:
+                resatoms_neighbor = {f"-{a.name}": a.index for a in residues[i-1].atoms}
+                resatoms.update(resatoms_neighbor)
 
-            # add termini definition
+            # add template definitions
             definitions = templates[residue.name]
             if is_nterm and "NTERM" in templates:
                 definitions = definitions + templates["NTERM"]
-                resatoms_neighbor = {f"+{a.name}": a.index for a in residues[i+1].atoms}
-                resatoms.update(resatoms_neighbor)
             if is_cterm and "CTERM" in templates:
                 definitions = definitions + templates["CTERM"]
-                resatoms_neighbor = {f"-{a.name}": a.index for a in residues[i-1].atoms}
-                resatoms.update(resatoms_neighbor)
 
             for entry in definitions:  # template entry:
                 if any(e not in resatoms for e in entry):
