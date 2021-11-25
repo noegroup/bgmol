@@ -1,13 +1,13 @@
 GENERAL:
-  - ["CB", "CA", "N", "C"]
-  - ["O", "C", "CA", "CB"]
+  - ["CB", "CA", "C", "N"]
+  - ["O", "C", "CA", "+N"]
   - ["HA", "CA", "N", "C"]
-  - ["H", "N", "CA", "HA"]
+  - ["H", "N", "CA", "-C"]
 
 ALA:
   - ["HB1", "CB", "CA", "N"]
   - ["HB2", "CB", "CA", "HB1"]
-  - ["HB3", "CB", "CA", "HB2"]
+  - ["HB3", "CB", "CA", "HB1"]
 
 LEU:
   - ["CG", "CB", "CA", "N"] # torsion
@@ -109,15 +109,13 @@ GLU:
   - ["HG3", "CG", "CB", "HG2"] # improper
 
 GLY:
-  - ["O", "C", "CA", "HA2"]
   # Amber style
   - ["HA2", "CA", "N", "C"]
-  - ["HA3", "CA", "C", "HA2"]
+  - ["HA3", "CA", "C", "N"]
   # CHARMM36 style
-  - ["HA1", "CA", "N", "HA2"]
+  - ["HA1", "CA", "C", "N"]
   # any of these options:
-  - ["H", "N", "CA", "HA1"]
-  - ["H", "N", "CA", "HA3"]
+  - ["H", "N", "CA", "C"]
 
 TRP:
   - ["CG", "CB", "CA", "N"]
