@@ -52,8 +52,10 @@ class TwoMiniPeptides(OpenMMSystem):
 
         forcefield = app.ForceField(*forcefield)
         nonbonded_method = app.PME if solvated else app.CutoffNonPeriodic
+        self._positions = np.row_stack(modeller.getPositions().value_in_unit(unit.nanometers))
+        self._topology = modeller.getTopology()
         self._system = forcefield.createSystem(
-            modeller.getTopology(),
+            self.topology,
             removeCMMotion=True,
             nonbondedMethod=nonbonded_method,
             nonbondedCutoff=self.nonbonded_cutoff,
@@ -62,8 +64,9 @@ class TwoMiniPeptides(OpenMMSystem):
             hydrogenMass=self.hydrogen_mass,
             rigidWater=True
         )
-        self._positions = np.row_stack(modeller.getPositions().value_in_unit(unit.nanometers))
-        self._topology = modeller.getTopology()
+        if nonbonded_method == app.PME:
+            box = self.positions.max(axis=0) - self.positions.min(axis=0)
+            self._system.setDefaultPeriodicBoxVectors(*(np.eye(3)*box))
 
     @staticmethod
     def _center(positions, mean=np.array([0.0, 0.0, 0.0])):
