@@ -162,6 +162,10 @@ class OpenMMSystem(BaseSystem):
         del self._topology
 
     @property
+    def n_atoms(self):
+        return self.system.getNumParticles()
+
+    @property
     def mdtraj_topology(self):
         """The mdtraj.Topology object corresponding to the test system (read-only)."""
         import mdtraj as md
