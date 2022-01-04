@@ -1,11 +1,16 @@
 """Test functionality of the system classes in the base module"""
 
+import os
+import packaging
+
 from bgmol.util.importing import import_openmm
-_, unit, app = import_openmm()
+mm, unit, app = import_openmm()
 import pytest
 
 from bgmol.systems.base import OpenMMSystem, OpenMMToolsTestSystem
+from bgmol.systems.ala2 import AlanineDipeptideImplicit
 from bgmol.util import BGMolException
+from bgmol.tpl.hdf5 import HDF5TrajectoryFile
 
 
 class SomeSystem(OpenMMSystem):
@@ -31,6 +36,32 @@ def test_parameters():
         s.system_parameter("h", set(), None)
     with pytest.raises(BGMolException):
         s.system_parameter("a", 1.0, 0.0)
+
+
+def test_create_simulation():
+    system = AlanineDipeptideImplicit()
+    with pytest.raises(ValueError):
+        system.create_openmm_simulation()
+    with pytest.raises(ValueError):
+         system.create_openmm_simulation(temperature=200., integrator=...)
+    simulation = system.create_openmm_simulation(temperature=305.)
+    integrator = simulation.context.getIntegrator()
+    assert integrator.getTemperature().value_in_unit(unit.kelvin) == pytest.approx(305.)
+    simulation.step(10)
+
+
+def test_create_reporters(tmpdir):
+    system = AlanineDipeptideImplicit()
+    simulation = system.create_openmm_simulation(temperature=305.)
+    simulation.reporters = system.create_openmm_reporters(tmpdir/"sim", interval=10)
+    simulation.step(40)
+    del simulation  # to close files
+    hdf5 = HDF5TrajectoryFile(tmpdir/"sim.h5")
+    traj = hdf5.read_as_traj()
+    assert traj.n_frames == 4
+
+    if packaging.version.parse(mm.__version__) >= packaging.version.parse("7.6"):
+        assert os.path.isfile(tmpdir/"sim.xml")
 
 
 def test_openmmtools_testsystem():
