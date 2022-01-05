@@ -288,7 +288,7 @@ class OpenMMSystem(BaseSystem):
         h5file = f"{out_stub}.h5"
         reporters.append(HDF5Reporter(file=h5file, reportInterval=interval, **kwargs))
 
-        if packaging.version.parse(mm.__version__) >= packaging.version.parse("7.6"):
+        if packaging.version.parse(mm.__version__) >= packaging.version.parse("7.7"):
             xmlfile = f"{out_stub}.xml"
             checkpoint_reporter = app.CheckpointReporter(xmlfile, reportInterval=interval, writeState=True)
             reporters.append(checkpoint_reporter)

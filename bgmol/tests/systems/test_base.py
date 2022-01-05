@@ -60,7 +60,7 @@ def test_create_reporters(tmpdir):
     traj = hdf5.read_as_traj()
     assert traj.n_frames == 4
 
-    if packaging.version.parse(mm.__version__) >= packaging.version.parse("7.6"):
+    if packaging.version.parse(mm.__version__) >= packaging.version.parse("7.7"):
         assert os.path.isfile(tmpdir/"sim.xml")
 
 
