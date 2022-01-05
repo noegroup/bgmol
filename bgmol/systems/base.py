@@ -303,7 +303,21 @@ class OpenMMSystem(BaseSystem):
             temperature: Optional[Union[unit.Quantity, float]] = None,
             state: Optional[mm.State] = None,
     ) -> app.Simulation:
-        """Create an OpenMM simulation based on this system
+        """Create an OpenMM simulation based on this system.
+        All arguments have reasonable default choices. Either the temperature or an integrator have to be specified.
+
+        Parameters
+        ----------
+        system
+            By default, use self.system.
+        platform
+            By default, use CUDA in mixed precision on first GPU. If CUDA is not available, fall back to CPU
+        integrator
+            By default use a `LangevinMiddleIntegrator` with 1 fs time step and 1/ps friction coefficient.
+        temperature
+            The integration temperature for the default integrator.
+        state
+            The initial state of the simulation. By default, use self.positions and random velocities.
 
         Examples
         --------
@@ -312,7 +326,7 @@ class OpenMMSystem(BaseSystem):
         """
         # defaults
         if (integrator is None) == (temperature is None):
-            raise ValueError("Keyword arguments 'integrator' and 'temperature' are mutually exclusive.")
+            raise ValueError("Requires exactly one of the keyword arguments 'integrator' and 'temperature'.")
         system = self.system if system is None else system
         if platform is None:
             try:
