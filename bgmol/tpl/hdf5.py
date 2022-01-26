@@ -34,11 +34,9 @@ import mdtraj.core.element as elem
 from mdtraj.utils import in_units_of, ensure_type, import_, cast_indices
 from mdtraj.utils.six import string_types
 from ..util.importing import import_openmm
+
 try:
     mm, units, _ = import_openmm()
-    # openmm
-    import openmm.unit as units
-    import openmm as mm
     OPENMM_IMPORTED = True
 except ImportError:
     # if someone tries to import all of mdtraj but doesn't
