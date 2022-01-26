@@ -17,7 +17,7 @@ NTERM:  # n-termini that are defined within the same residue
   - ["CY", "N", "CA", "C"]
   - ["OY", "CY", "N", "CA"]
   - ["CAY", "CY", "N", "OY"]
-  - ["HY1", "CAY", "CY", "O"]
+  - ["HY1", "CAY", "CY", "OY"]
   - ["HY2", "CAY", "CY", "HY1"]
   - ["HY3", "CAY", "CY", "HY1"]
 
