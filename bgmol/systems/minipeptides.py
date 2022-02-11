@@ -7,7 +7,7 @@ from bgmol.util.importing import import_openmm
 _, unit, app = import_openmm()
 from bgmol.systems import OpenMMSystem
 from bgmol.util import get_data_file
-from torchvision.datasets.utils import download_url
+from ..tpl.download import download_url
 
 __all__ = ["MiniPeptide", "AMINO_ACIDS"]
 

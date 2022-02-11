@@ -7,7 +7,7 @@ from bgmol.tpl.hdf5 import load_hdf5, HDF5TrajectoryFile
 from ..util.importing import import_openmm
 mm, unit, app = import_openmm()
 
-from torchvision.datasets.utils import download_and_extract_archive
+from ..tpl.download import download_and_extract_archive
 
 __all__ = ["DataSet"]
 

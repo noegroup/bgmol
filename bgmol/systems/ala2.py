@@ -5,7 +5,7 @@ from bgmol.util.importing import import_openmm
 _, unit, app = import_openmm()
 import mdtraj as md
 from ..systems.base import OpenMMToolsTestSystem, OpenMMSystem
-from torchvision.datasets.utils import download_url
+from ..tpl.download import download_url
 
 
 __all__ = ["AlanineDipeptideImplicit", "AlanineDipeptideTSF"]
