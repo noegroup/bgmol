@@ -1,3 +1,6 @@
+"""this is a literal copy from torchvision"""
+
+
 #from torchvision.datasets.utils import download_and_extract_archive, download_url
 
 
