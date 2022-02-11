@@ -5,7 +5,7 @@ from bgmol.util.importing import import_openmm
 _, unit, app = import_openmm()
 from ..systems.base import OpenMMSystem
 from ..util.pdbpatch import fixed_atom_names
-from torchvision.datasets.utils import download_url
+from ..tpl.download import download_url
 
 __all__ = ["ChignolinC22Implicit"]
 

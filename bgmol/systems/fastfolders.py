@@ -5,7 +5,7 @@ import tempfile
 from bgmol.util.importing import import_openmm
 _, unit, app = import_openmm()
 from bgmol.systems import OpenMMSystem
-from torchvision.datasets.utils import download_url
+from ..tpl.download import download_url
 from ..util.pdbpatch import fixed_atom_names
 
 __all__ = ["FAST_FOLDER_NAMES", "FastFolder"]
@@ -26,8 +26,10 @@ class FastFolder(OpenMMSystem):
         For openmm force field files not all proteins might be supported
         (e.g. ["amber99sbildn.xml"] does not support villin and ntl9 because of nonstandard residues,
         a norleucine (NLE) and a ALA-CONH2 C-terminus, respectively).
-    implicit_solvent : app.internal.singleton.Singleton or None, optional
-        Implicit solvent model to be used.
+    psf_implicit_solvent : app.internal.singleton.Singleton or None, optional
+        Implicit solvent model to be used in combination with the C36 force field.
+        For other force fields, specify implicit solvent model by passing the implicit solvent xml file
+        to the forcefield argument.
     constraints : app.internal.singleton.Singleton, optional
         Constraint types
     solvated : bool, optional
@@ -61,7 +63,7 @@ class FastFolder(OpenMMSystem):
             self,
             protein="chignolin",
             forcefield="charmm36m",
-            implicit_solvent=app.OBC2,
+            psf_implicit_solvent=app.OBC2,
             constraints=app.HBonds,
             solvated=False,
             hydrogen_mass=None,
@@ -82,8 +84,8 @@ class FastFolder(OpenMMSystem):
         self.forcefield = self.system_parameter(
             "forcefield", forcefield, default="charmm36m"
         )
-        self.implicit_solvent = self.system_parameter(
-            "implicit_solvent", implicit_solvent, default=app.OBC2
+        self.psf_implicit_solvent = self.system_parameter(
+            "psf_implicit_solvent", psf_implicit_solvent, default=app.OBC2
         )
         self.constraints = self.system_parameter(
             "constraints", constraints, default=app.HBonds
@@ -119,9 +121,9 @@ class FastFolder(OpenMMSystem):
         if solvated:
             a = _INIT_BOX_SIZES[self.protein] * unit.nanometers
             psf.setBox(a, a, a, 90., 90., 90.)
-            implicit_solvent = None
+            psf_implicit_solvent = None
         else:
-            implicit_solvent = self.implicit_solvent
+            psf_implicit_solvent = self.psf_implicit_solvent
 
         # create system
         create_system_kwargs = dict(
@@ -132,7 +134,7 @@ class FastFolder(OpenMMSystem):
             constraints=constraints,
             hydrogenMass=hydrogen_mass,
             rigidWater=True,
-            implicitSolvent=implicit_solvent
+            implicitSolvent=psf_implicit_solvent
         )
         if self.forcefield == "charmm36m":
             params = app.CharmmParameterSet(
@@ -140,6 +142,9 @@ class FastFolder(OpenMMSystem):
             )
             self._system = psf.createSystem(params, **create_system_kwargs)
         elif isinstance(self.forcefield, tuple) or isinstance(self.forcefield, list):
+            if create_system_kwargs.get("implicitSolvent") is not None:
+                raise ValueError("Please specify the implicit solvent model via an xml file and set psf_implicit_solvent=None.")
+            create_system_kwargs.pop("implicitSolvent") 
             ff = app.ForceField(*self.forcefield)
             self._system = ff.createSystem(psf.topology, **create_system_kwargs)
         else:
