@@ -8,6 +8,9 @@ from itertools import product
 from bgmol.systems import ChignolinC22Implicit
 from bgmol.systems.fastfolders import FastFolder, FAST_FOLDER_NAMES
 from bgmol import systems, api
+from bgmol.util.importing import import_openmm
+
+_, _, app = import_openmm()
 
 
 @pytest.fixture(scope="session", params=api.list_bgmol())
@@ -50,7 +53,11 @@ def fastfolder_system(request, tmpdir_factory):
     tmpdir = tmpdir_factory.mktemp(protein)
     if forcefield != "charmm36m" and protein in ["ntl9", "villin"]:
         pytest.skip("Nonstandard residues.")
-    yield FastFolder(protein, download=True, solvated=solvated, forcefield=forcefield, root=str(tmpdir))
+    if forcefield == "charmm36m" and not solvated:
+        implicit_solvent = app.OBC2
+    else:
+        implicit_solvent = None
+    yield FastFolder(protein, download=True, solvated=solvated, forcefield=forcefield, root=str(tmpdir), psf_implicit_solvent=implicit_solvent)
 
 
 # skipping slow tests by default
