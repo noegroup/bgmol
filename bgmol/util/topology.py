@@ -168,10 +168,10 @@ def is_type_torsion(type_torsion: str, torsions: Sequence[Sequence[int]], mdtraj
         A boolean array which contains True iff the torsion is of the specified type.
     """
 
-    fake_traj = md.Trajectory(np.zeros((mdtraj_topology, 3)), mdtraj_topology)
+    fake_traj = md.Trajectory(np.zeros((mdtraj_topology.n_atoms, 3)), mdtraj_topology)
     if type_torsion == 'ramachandran':
         indices = np.vstack((md.compute_phi(fake_traj)[0], md.compute_psi(fake_traj)[0]))
-    if type_torsion == 'phi':
+    elif type_torsion == 'phi':
         indices = md.compute_phi(fake_traj)[0]
     elif type_torsion == 'psi':
         indices = md.compute_psi(fake_traj)[0]
@@ -218,7 +218,8 @@ def is_ramachandran_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: 
     is_ramachandran : np.ndarray
         A boolean array which contains True iff the torsion is Ramachandran
     """
-  return is_type_torsion('ramachandran', torsions, mdtraj_topology)
+
+    return is_type_torsion('ramachandran', torsions, mdtraj_topology)
 
 
 def rewire_chiral_torsions(z_matrix: np.ndarray, mdtraj_topology: md.Topology, verbose=True):
