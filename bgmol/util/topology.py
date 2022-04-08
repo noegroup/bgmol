@@ -5,7 +5,10 @@ import numpy as np
 import mdtraj as md
 
 
-__all__ = ["rewire_chiral_torsions", "find_rings", "is_proper_torsion", "is_chiral_torsion", "is_ring_torsion"]
+__all__ = [
+    "rewire_chiral_torsions", "find_rings", "is_proper_torsion", "is_chiral_torsion",
+    "is_ring_torsion", "is_methyl_torsion"
+]
 
 
 def find_rings(mdtraj_topology: md.Topology):
@@ -76,6 +79,44 @@ def is_proper_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: md.Top
         ):
             is_proper[i] = True
     return is_proper
+
+
+def is_methyl_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: md.Topology):
+    """Whether torsions are the first (proper) torsion of a methyl group.
+    Methyl hydrogens are placed by one proper and two improper torsions. This function only indicates the former.
+
+    Parameters
+    ----------
+    torsions : np.ndarray or Sequence[Sequence[int]]
+        A list of torsions or a zmatrix.
+    mdtraj_topology : md.Topology
+
+    Returns
+    -------
+    is_methyl : np.ndarray
+        A boolean array which contains 1 for proper and 0 for improper torsions.
+
+    Notes
+    -----
+    Requires networkx.
+    """
+    is_methyl = np.zeros(len(torsions), dtype=bool)
+    is_proper = is_proper_torsion(torsions, mdtraj_topology)
+    graph = mdtraj_topology.to_bondgraph()
+    for i, (torsion, proper) in enumerate(zip(torsions, is_proper)):
+        if not proper:
+            continue
+        atom = mdtraj_topology.atom(torsion[0])
+        if not atom.element.symbol == "H":
+            continue
+        neighbor = list(graph.neighbors(atom))[0]
+        if not neighbor.element.symbol == "C":
+            continue
+        carbon_neighbors = graph.neighbors(neighbor)
+        n_hydrogens = sum(n.element.symbol == "H" for n in carbon_neighbors)
+        if n_hydrogens == 3:
+            is_methyl[i] = True
+    return is_methyl
 
 
 def _select_ha(mdtraj_topology: md.Topology):
