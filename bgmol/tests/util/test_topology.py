@@ -2,7 +2,9 @@ import pytest
 import numpy as np
 from bgmol.systems.ala2 import DEFAULT_GLOBAL_Z_MATRIX
 from bgmol.systems import MiniPeptide, ChignolinC22Implicit
-from bgmol.util import rewire_chiral_torsions, find_rings, is_proper_torsion, is_chiral_torsion, is_ring_torsion
+from bgmol.util import (
+    rewire_chiral_torsions, find_rings, is_proper_torsion, is_chiral_torsion, is_ring_torsion, is_methyl_torsion
+)
 from bgmol.zmatrix import ZMatrixFactory
 
 
@@ -93,3 +95,10 @@ def test_is_ring_torsion():
     z = ZMatrixFactory(top).build_with_templates()[0]
     is_ring = is_ring_torsion(z, top)
     assert is_ring.sum() == 4 + 3 * 5 + 8  # 1 PRO, 3 TYR, 1 TRP
+
+
+def test_is_methyl_torsion():
+    top = MiniPeptide("A").mdtraj_topology
+    z = ZMatrixFactory(top).build_with_templates()[0]
+    # there are three methyl groups in ala2
+    assert is_methyl_torsion(z, top).sum() == 3

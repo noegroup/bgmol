@@ -5,7 +5,10 @@ import numpy as np
 import mdtraj as md
 
 
-__all__ = ["rewire_chiral_torsions", "find_rings", "is_proper_torsion", "is_chiral_torsion", "is_ring_torsion", "is_type_torsion", "is_ramachandran_torsion"]
+__all__ = [
+    "rewire_chiral_torsions", "find_rings", "is_proper_torsion", "is_chiral_torsion",
+    "is_ring_torsion", "is_methyl_torsion", "is_type_torsion", "is_ramachandran_torsion"
+]
 
 
 def find_rings(mdtraj_topology: md.Topology):
@@ -78,6 +81,44 @@ def is_proper_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: md.Top
     return is_proper
 
 
+def is_methyl_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: md.Topology):
+    """Whether torsions are the first (proper) torsion of a methyl group.
+    Methyl hydrogens are placed by one proper and two improper torsions. This function only indicates the former.
+
+    Parameters
+    ----------
+    torsions : np.ndarray or Sequence[Sequence[int]]
+        A list of torsions or a zmatrix.
+    mdtraj_topology : md.Topology
+
+    Returns
+    -------
+    is_methyl : np.ndarray
+        A boolean array which contains 1 for proper and 0 for improper torsions.
+
+    Notes
+    -----
+    Requires networkx.
+    """
+    is_methyl = np.zeros(len(torsions), dtype=bool)
+    is_proper = is_proper_torsion(torsions, mdtraj_topology)
+    graph = mdtraj_topology.to_bondgraph()
+    for i, (torsion, proper) in enumerate(zip(torsions, is_proper)):
+        if not proper:
+            continue
+        atom = mdtraj_topology.atom(torsion[0])
+        if not atom.element.symbol == "H":
+            continue
+        neighbor = list(graph.neighbors(atom))[0]
+        if not neighbor.element.symbol == "C":
+            continue
+        carbon_neighbors = graph.neighbors(neighbor)
+        n_hydrogens = sum(n.element.symbol == "H" for n in carbon_neighbors)
+        if n_hydrogens == 3:
+            is_methyl[i] = True
+    return is_methyl
+
+
 def _select_ha(mdtraj_topology: md.Topology):
     halpha = mdtraj_topology.select("name HA")
     graph = mdtraj_topology.to_bondgraph()
@@ -111,7 +152,7 @@ def is_chiral_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: md.Top
 
 def is_type_torsion(type_torsion: str, torsions: Sequence[Sequence[int]], mdtraj_topology: md.Topology):
     """Whether torsions are of the specified type.
-    Types supported are: ramachandran, phi, psi, omega, chi1, chi2, chi3, chi4, ring, proper, chiral
+    Types supported are: ramachandran, phi, psi, omega, chi1, chi2, chi3, chi4, ring, proper, methyl, chiral
 
     Parameters
     ----------
@@ -148,12 +189,14 @@ def is_type_torsion(type_torsion: str, torsions: Sequence[Sequence[int]], mdtraj
         return is_ring_torsion(torsions, mdtraj_topology)
     elif type_torsion == 'proper':
         return is_proper_torsion(torsions, mdtraj_topology)
+    elif type_torsion == 'methyl':
+        return is_methyl_torsion(torsions, mdtraj_topology)
     elif type_torsion == 'chiral':
         return is_chiral_torsion(torsions, mdtraj_topology)
     else:
         raise ValueError("Supported torsion types are: "
-          "'ramachandran', 'phi', 'psi', 'omega', 'chi1', "
-          "'chi2', 'chi3', 'chi4', 'ring', 'proper', 'chiral'")
+          "'ramachandran', 'phi', 'psi', 'omega', 'chi1', 'chi2', "
+          "'chi3', 'chi4', 'ring', 'proper', 'methyl', 'chiral'")
 
     ordered_torsions = np.sort(torsions, axis=1) #make sure index ordering is same as md
     is_type = np.array([np.any([np.all(j == ind) for j in indices]) for ind in ordered_torsions])
