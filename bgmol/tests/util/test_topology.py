@@ -3,7 +3,8 @@ import numpy as np
 from bgmol.systems.ala2 import DEFAULT_GLOBAL_Z_MATRIX
 from bgmol.systems import MiniPeptide, ChignolinC22Implicit
 from bgmol.util import (
-    rewire_chiral_torsions, find_rings, is_proper_torsion, is_chiral_torsion, is_ring_torsion, is_methyl_torsion
+    rewire_chiral_torsions, find_rings, is_proper_torsion, is_chiral_torsion, is_ring_torsion, is_methyl_torsion,
+    is_ramachandran_torsion, is_type_torsion
 )
 from bgmol.zmatrix import ZMatrixFactory
 
@@ -102,3 +103,27 @@ def test_is_methyl_torsion():
     z = ZMatrixFactory(top).build_with_templates()[0]
     # there are three methyl groups in ala2
     assert is_methyl_torsion(z, top).sum() == 3
+
+
+def test_is_ramachandran_torsion():
+    top = MiniPeptide("A").mdtraj_topology
+    z = ZMatrixFactory(top).build_with_templates()[0]
+    # there are two ramachandran angles in ala2
+    ramachandans = is_ramachandran_torsion(z, top)
+    assert ramachandans.sum() == 2
+
+
+@pytest.mark.parametrize("amino", ["A", "Y"])
+def test_is_type_torsion(amino):
+    top = MiniPeptide(amino).mdtraj_topology
+    z = ZMatrixFactory(top).build_with_templates()[0]
+
+    assert np.array_equal(is_type_torsion("ramachandran", z, top), is_ramachandran_torsion(z, top))
+    assert np.array_equal(is_type_torsion("proper", z, top), is_proper_torsion(z, top))
+    assert np.array_equal(is_type_torsion("methyl", z, top), is_methyl_torsion(z, top))
+    assert np.array_equal(is_type_torsion("ring", z, top), is_ring_torsion(z, top))
+    assert np.array_equal(is_type_torsion("chiral", z, top), is_chiral_torsion(z, top))
+    assert is_type_torsion("phi", z, top).sum() == 1
+    assert is_type_torsion("psi", z, top).sum() == 1
+    assert is_type_torsion("omega", z, top).sum() == 0
+    assert is_type_torsion('chi4', z, top).sum() == 0

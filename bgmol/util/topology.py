@@ -7,7 +7,7 @@ import mdtraj as md
 
 __all__ = [
     "rewire_chiral_torsions", "find_rings", "is_proper_torsion", "is_chiral_torsion",
-    "is_ring_torsion", "is_methyl_torsion"
+    "is_ring_torsion", "is_methyl_torsion", "is_type_torsion", "is_ramachandran_torsion"
 ]
 
 
@@ -148,6 +148,78 @@ def is_chiral_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: md.Top
         if torsion[0] in halpha:
             is_ha[i] = True
     return is_ha
+
+
+def is_type_torsion(type_torsion: str, torsions: Sequence[Sequence[int]], mdtraj_topology: md.Topology):
+    """Whether torsions are of the specified type.
+    Types supported are: ramachandran, phi, psi, omega, chi1, chi2, chi3, chi4, ring, proper, methyl, chiral
+
+    Parameters
+    ----------
+    type_torsion : str
+        Which type of torsion among the supported ones.
+    torsions : np.ndarray or Sequence[Sequence[int]]
+        A list of torsions or a zmatrix.
+    mdtraj_topology : md.Topology
+
+    Returns
+    -------
+    is_type : np.ndarray
+        A boolean array which contains True iff the torsion is of the specified type.
+    """
+
+    fake_traj = md.Trajectory(np.zeros((mdtraj_topology.n_atoms, 3)), mdtraj_topology)
+    if type_torsion == 'ramachandran':
+        indices = np.vstack((md.compute_phi(fake_traj)[0], md.compute_psi(fake_traj)[0]))
+    elif type_torsion == 'phi':
+        indices = md.compute_phi(fake_traj)[0]
+    elif type_torsion == 'psi':
+        indices = md.compute_psi(fake_traj)[0]
+    elif type_torsion == 'omega':
+        indices = md.compute_omega(fake_traj)[0]
+    elif type_torsion == 'chi1':
+        indices = md.compute_chi1(fake_traj)[0]
+    elif type_torsion == 'chi2':
+        indices = md.compute_chi2(fake_traj)[0]
+    elif type_torsion == 'chi3':
+        indices = md.compute_chi3(fake_traj)[0]
+    elif type_torsion == 'chi4':
+        indices = md.compute_chi4(fake_traj)[0]
+    elif type_torsion == 'ring':
+        return is_ring_torsion(torsions, mdtraj_topology)
+    elif type_torsion == 'proper':
+        return is_proper_torsion(torsions, mdtraj_topology)
+    elif type_torsion == 'methyl':
+        return is_methyl_torsion(torsions, mdtraj_topology)
+    elif type_torsion == 'chiral':
+        return is_chiral_torsion(torsions, mdtraj_topology)
+    else:
+        raise ValueError("Supported torsion types are: "
+          "'ramachandran', 'phi', 'psi', 'omega', 'chi1', 'chi2', "
+          "'chi3', 'chi4', 'ring', 'proper', 'methyl', 'chiral'")
+
+    ordered_torsions = np.sort(torsions, axis=1) #make sure index ordering is same as md
+    is_type = np.array([np.any([np.all(j == ind) for j in indices]) for ind in ordered_torsions])
+
+    return is_type
+
+
+def is_ramachandran_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: md.Topology):
+    """Whether torsions are Ramachandran angles or not.
+
+    Parameters
+    ----------
+    torsions : np.ndarray or Sequence[Sequence[int]]
+        A list of torsions or a zmatrix.
+    mdtraj_topology : md.Topology
+
+    Returns
+    -------
+    is_ramachandran : np.ndarray
+        A boolean array which contains True iff the torsion is Ramachandran
+    """
+
+    return is_type_torsion('ramachandran', torsions, mdtraj_topology)
 
 
 def rewire_chiral_torsions(z_matrix: np.ndarray, mdtraj_topology: md.Topology, verbose=True):
