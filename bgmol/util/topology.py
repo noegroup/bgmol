@@ -152,7 +152,7 @@ def is_chiral_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: md.Top
 
 def is_type_torsion(type_torsion: str, torsions: Sequence[Sequence[int]], mdtraj_topology: md.Topology):
     """Whether torsions are of the specified type.
-    Types supported are: ramachandran, phi, psi, omega, chi1, chi2, chi3, chi4, ring, proper, methyl, chiral
+    Types supported are: ramachandran, phi, psi, omega, chi, chi1, chi2, chi3, chi4, ring, proper, methyl, chiral
 
     Parameters
     ----------
@@ -177,6 +177,9 @@ def is_type_torsion(type_torsion: str, torsions: Sequence[Sequence[int]], mdtraj
         indices = md.compute_psi(fake_traj)[0]
     elif type_torsion == 'omega':
         indices = md.compute_omega(fake_traj)[0]
+    elif type_torsion == 'chi':
+        indices = np.vstack((md.compute_chi1(fake_traj)[0], md.compute_chi2(fake_traj)[0],
+            md.compute_chi3(fake_traj)[0], md.compute_chi4(fake_traj)[0]))
     elif type_torsion == 'chi1':
         indices = md.compute_chi1(fake_traj)[0]
     elif type_torsion == 'chi2':
@@ -195,8 +198,8 @@ def is_type_torsion(type_torsion: str, torsions: Sequence[Sequence[int]], mdtraj
         return is_chiral_torsion(torsions, mdtraj_topology)
     else:
         raise ValueError("Supported torsion types are: "
-          "'ramachandran', 'phi', 'psi', 'omega', 'chi1', 'chi2', "
-          "'chi3', 'chi4', 'ring', 'proper', 'methyl', 'chiral'")
+          "'ramachandran', 'phi', 'psi', 'omega', 'chi', 'chi1', "
+          "'chi2', 'chi3', 'chi4', 'ring', 'proper', 'methyl', 'chiral'")
 
     ordered_torsions = np.sort(torsions, axis=1) #make sure index ordering is same as md
     is_type = np.array([np.any([np.all(j == ind) for j in indices]) for ind in ordered_torsions])
