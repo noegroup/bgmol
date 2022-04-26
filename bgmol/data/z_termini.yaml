@@ -14,7 +14,7 @@ NTERM:  # n-termini that are defined within the same residue
   - ["HT2", "N", "CA", "HT1"]
   - ["HT3", "N", "CA", "HT1"]
   # CHARMM 22 style ACE
-  - ["CY", "N", "CA", "C"]
+  - ["CY", "N", "CA", "H"]
   - ["OY", "CY", "N", "CA"]
   - ["CAY", "CY", "N", "OY"]
   - ["HY1", "CAY", "CY", "OY"]
@@ -41,7 +41,7 @@ CTERM:
   - ["OT2", "C", "CA", "OT1"]
   # CHARMM36m style NME
   - ["OT1", "C", "CA", "N"]
-  - ["NT", "C", "CA", "N"]
+  - ["NT", "C", "CA", "OT1"]
   - ["CAT", "NT", "C", "CA"]
   - ["HNT", "NT", "C", "CAT"]
   - ["HT1", "CAT", "NT", "C"]
