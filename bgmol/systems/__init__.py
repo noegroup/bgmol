@@ -6,3 +6,4 @@ from .torchsystems import *
 from .minipeptides import *
 from .chignolin import *
 from .fastfolders import *
+from .two_peptides import *
