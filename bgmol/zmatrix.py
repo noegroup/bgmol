@@ -80,26 +80,34 @@ class ZMatrixFactory:
         fixed_atoms : np.ndarray
         """
         subset = self._select(subset)
-        current = set(self._placed_atoms())
-        if len(current) < 3:
-            self._z = self._seed_z(current, subset)
+        current_atoms = set(self._placed_atoms())
+        if len(current_atoms) < 3:
+            self._z = self._seed_z(current_atoms, subset)
             for torsion in self._z:
-                current.add(torsion[0])
-        while len(current) > 0:
-            new_current = copy(current)
-            for atom in current:
+                current_atoms.add(torsion[0])
+
+        while any(not self._is_placed(atom) for atom in subset):
+            # add neighbors
+            next_atoms = copy(current_atoms)
+            for atom in current_atoms:
                 assert self._is_placed(atom)
                 for neighbor in self._neighbors(atom):
                     if not self._is_placed(neighbor) and neighbor in subset:
-                        new_current.add(neighbor)
-                new_current.remove(atom)
-            current = new_current
+                        next_atoms.add(neighbor)
+                next_atoms.remove(atom)
+            # if there weren't any neighbors, add one in the distance matrix
+            if len(next_atoms) == 0:
+                next_atoms = self._closest_in_bond_graph(list(current_atoms), list(self._remaining_atoms(subset)))
+
+            current_atoms = next_atoms
             # build part of z matrix
             z = []
-            for atom in current:
+            for atom in current_atoms:
                 closest = self._3closest_placed_atoms(atom, subset=subset)
                 if len(closest) == 3:
                     z.append([atom, *closest])
+                else:
+                    print("!", atom, closest)
             self._z.extend(z)
         if rewire_chiral:
             self.z_matrix = rewire_chiral_torsions(self.z_matrix, self.top, verbose=verbose)
@@ -145,6 +153,18 @@ class ZMatrixFactory:
             yield f
         for torsion in self._z:
             yield torsion[0]
+
+    def _remaining_atoms(self, subset):
+        for atom in subset:
+            if not self._is_placed(atom):
+                yield atom
+
+    def _closest_in_bond_graph(self, placed, subset):
+        min_distance = self._distances[placed][:, subset].min()
+        is_in_closest = (self._distances == min_distance)[placed]
+        is_in_closest = np.any(is_in_closest, axis=0)
+        closest,  = np.where(is_in_closest)
+        return set(np.intersect1d(closest, subset))
 
     def _torsion_index(self, i):
         return list(self._placed_atoms()).index(i)

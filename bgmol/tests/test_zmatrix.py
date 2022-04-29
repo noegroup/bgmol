@@ -100,7 +100,7 @@ def test_z_factory_naive_cgn(chignolin):
     assert z.shape == (165, 4)
 
 
-def test_z_factory_naive_cgn_global(chignolin):
+def test_z_factory_templates_cgn_global(chignolin):
     top = chignolin.mdtraj_topology
     factory = ZMatrixFactory(top)
     z, _ = factory.build_with_templates()
@@ -111,3 +111,13 @@ def test_z_factory_naive_cgn_global(chignolin):
     assert (np.array([atom_ids[3], atom_ids[0]]) == z[torsion_ids[3], :2]).all()
 
     _check_bonds_physical(z, top)
+
+
+def test_z_factory_naive_not_connected(chignolin):
+    top = chignolin.mdtraj_topology
+    factory = ZMatrixFactory(top)
+    factory.build_naive([8, 64, 105, 150])
+    factory.build_naive("name CZ or name CH2")
+    z, _ = factory.build_naive("name CA")
+    #assert len(z) == 10
+    #assert (z[:, 0] == top.select("name CA")).all()
