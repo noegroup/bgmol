@@ -169,3 +169,31 @@ def test_torsion_marginal_estimate(ala2dataset, ctx, normalize):
     assert torch.allclose(uniform.mean(dim=0), 0.5 * torch.ones_like(uniform[0]), atol=0.35)
     assert torch.all(uniform.min(dim=0).values >= 0.)
     assert torch.all(uniform.max(dim=0).values <= 1.)
+
+
+def test_ic_system(ala2dataset):
+    icsystem = ic_system(ala2dataset.system.system)
+    # make sure the nonbonded forces have been deleted
+    for f in icsystem.getForces():
+        assert not isinstance(f, mm.NonbondedForce)
+        assert not isinstance(f, mm.CustomGBForce)
+    # make sure the 1-4 force has been created
+    assert any(isinstance(f, mm.CustomBondForce) for f in icsystem.getForces())
+
+
+@pytest.mark.parametrize("normalize_angles", (False, True))
+def test_torsion_scan(ala2dataset, normalize_angles):
+    # TODO: bugfix and enable for normalized_angles
+    system = ala2dataset.system.system
+    num_bins = 24
+    z_matrix = ala2.system.z_matrix
+    trafo = MixedCoordinateTransformation(
+        data=torch.tensor(ala2.coordinates),
+        z_matrix=z_matrix,
+        fixed_atoms=np.array([6, 8, 9, 10, 14]),
+        normalize_angles=normalize_angles
+    )
+    energies, bins = torsion_scan(system, trafo, torch.tensor(ala2.coordinates[0]), num_bins=num_bins)
+    assert energies.shape == (len(z_matrix), num_bins + 1)
+    # assert continuity around the periodic boundary
+    assert torch.allclose(energies[:, 0], energies[:, -1])

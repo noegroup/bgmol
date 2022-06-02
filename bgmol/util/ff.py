@@ -1,10 +1,12 @@
 import warnings
 from typing import Sequence
+import copy
 
 import torch
 from ..util.importing import import_openmm
 mm, unit, _ = import_openmm()
 import numpy as np
+
 
 __all__ = [
     "bond_constraints", "bond_marginal_estimate", "angle_marginal_estimate",
@@ -13,6 +15,11 @@ __all__ = [
     "lookup_bonds", "lookup_angles", "torsion_energies_from_ff_parameters",
     "torsion_marginal_cdf_estimate"
 ]
+
+
+ONE_4PI_EPS0 = 138.935456
+NB_POTENTIAL = f"{ONE_4PI_EPS0}*qprod*r^(-1) + A/r^12 - B/r^6;"
+A_B_FROM_EPSILON_SIGMA = "A = 4.0*epsilon*sigma^12; B = 4.0*epsilon*sigma^6;"
 
 
 def bond_constraints(system, coordinate_transform):
@@ -152,8 +159,9 @@ def torsion_marginal_cdf_estimate(
         discrete_torsions=64,
         device=torch.device("cpu"),
         dtype=torch.get_default_dtype(),
-        method="ff", # "scan",
-        max_energy=1e3 # in kT,
+        method="ff",  # "scan",
+        coordinates=None,  # initial coordinates
+        max_energy=1e3  # in kT,
 ):
     """discrete_torsions can be an int or an array of floats"""
 
@@ -174,7 +182,9 @@ def torsion_marginal_cdf_estimate(
     if method == "ff":
         energies = torsion_energies_from_ff_parameters(system, coordinate_transform, temperature, discrete_torsions)
     else:
-        raise NotImplementedError(f"Method {method} not implemented for torsion_marginal_icdf_estimate")
+        if coordinates is None:
+            raise ValueError("torsion scan requires coordinates")
+        energies = torsion_energies_from_scan(system, coordinate_transform, coordinates, temperature, discrete_torsions)
 
     # clip and normalize energies, so that \int e^(-u) = 1
     energies = torch.tensor(energies)
@@ -239,6 +249,75 @@ def torsion_energies_from_ff_parameters(
         epsilons=epsilons
     )
     return energies
+
+
+def torsion_energies_from_scan(
+        system,
+        coordinate_transform,
+        coordinates,
+        temperature,
+        discrete_torsions,
+):
+#def torsion_scan(system, coordinate_transform, coordinates, num_bins, progress_bar=lambda _: _):
+    pass
+    """Scan torsion potential energies of intramolecular force field terms.
+
+    Parameters
+    ----------
+    system : simtk.openmm.System
+        The system with all its bonded and nonbonded forces.
+    coordinate_transform : bgflow.nn.flow.crd_transform.ic.MixedCoordinateTransformation
+        A coordinate transformation between internal and Cartesian coordinates.
+    coordinates : torch.Tensor
+        Starting coordinates from which the torsion scan is conducted.
+    num_bins : int
+        The number of points at which the potential energy is evaluated.
+    progress_bar : Callable
+        A function that can be used to pass a progress bar generator (such as tqdm.tqdm).
+
+    Returns
+    -------
+    energies : torch.Tensor
+        Discrete potential energies of intramolecular terms along each torsion in kJ/mol. The tensor has shape (num_torsions, num_bins+1).
+    bin_edges : torch.Tensor
+        The values at which the energies were evaluated (shape=(num_bins + 1,)).    
+    """
+    icsystem = _ic_system(system)
+    z_matrix = coordinate_transform._rel_ic._z_matrix
+    normalize_angles = coordinate_transform._rel_ic._normalize_angles
+    # TODO: need a better interface for the Z-matrix and for the _normalize_angles flag
+    if normalize_angles:
+        bin_edges = torch.linspace(0., 1., steps=num_bins + 1).to(coordinates)
+    else:
+        bin_edges = torch.linspace(-np.pi, np.pi, steps=num_bins + 1).to(coordinates)
+
+    # get equilibrium bonds
+    bonds, _ = lookup_bonds(system, z_matrix[..., :2], 1.)
+    bonds = torch.tensor([bonds]).to(coordinates)
+
+    # get equilibrium angles
+    angles, _ = lookup_angles(system, z_matrix[..., :3], 1.)
+    angles = torch.tensor([angles]).to(coordinates)
+    if normalize_angles:
+        angles = (angles + np.pi) / (2 * np.pi)
+
+    # compute torsion energies (TODO: maybe use the OpenMM bridge here if this ever becomes a bottleneck)
+    start_bonds, start_angles, start_torsions, start_z_fixed, _ = coordinate_transform._forward(coordinates[None, ...])
+    energies = torch.zeros((len(z_matrix), num_bins + 1)).to(coordinates)
+    context = mm.Context(system, mm.VerletIntegrator(0.001), mm.Platform.getPlatformByName("CPU"))
+    for i in progress_bar(range(len(z_matrix))):
+        for j, torsion_angle in enumerate(bin_edges):
+            torsions = start_torsions.clone()
+            torsions[0, i] = torsion_angle
+            coords, _ = coordinate_transform._inverse(bonds, angles, torsions, start_z_fixed)
+            context.setPositions(coords[0].detach().cpu().numpy().reshape(-1, 3))
+            energies[i, j] = context.getState(getEnergy=True).getPotentialEnergy().value_in_unit(
+                unit.kilojoule_per_mole)
+        if not torch.allclose(energies[i, 0], energies[i, -1], rtol=0.01, atol=1e-2):
+            warnings.warn(
+                f"Torsions are not periodic; found {energies[i, -1]:.2f}, expected {energies[i, 0]:.2f} kJ/mol")
+
+    return energies, bin_edges
 
 
 def _torsions_to_distances14(torsions, bonds, angles):
@@ -550,4 +629,42 @@ def lookup_torsions(
         epsilons[i] = (thermodynamic_beta * epsilon)
 
     return periodicities, phases, force_constants, chargeprods, sigmas, epsilons
+
+
+def _ic_system(system):
+    """System with only intramolecular forces.
+
+    Parameters
+    ----------
+    system : simtk.openmm.System
+        The system with nonbonded/solvation forces.
+
+    Returns
+    -------
+    modified_system : simtk.openmm.System
+        The system with only bonded forces.
+    """
+
+    modified_system = copy.deepcopy(system)
+
+    # remove intermolecular forces
+    for i in range(modified_system.getNumForces() - 1, -1, -1):
+        force = modified_system.getForce(i)
+
+        if "NonbondedF" in force.__class__.__name__:
+            # retain 1-4 as a CustomBondForce
+            vdw14 = mm.CustomBondForce(NB_POTENTIAL + A_B_FROM_EPSILON_SIGMA)
+            vdw14.addPerBondParameter("qprod")
+            vdw14.addPerBondParameter("sigma")
+            vdw14.addPerBondParameter("epsilon")
+            for j in range(force.getNumExceptions()):
+                atom1, atom2, qprod, sig, eps = force.getExceptionParameters(j)
+                vdw14.addBond(atom1, atom2, [qprod, sig, eps])
+            modified_system.addForce(vdw14)
+            # TODO: not implemented for CustomNonbondedForces, yet
+
+        if all(ele not in force.__class__.__name__ for ele in ["BondF", "AngleF", "TorsionF"]):
+            modified_system.removeForce(i)
+
+    return modified_system
 
