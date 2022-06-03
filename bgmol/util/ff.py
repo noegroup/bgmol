@@ -181,10 +181,12 @@ def torsion_marginal_cdf_estimate(
 
     if method == "ff":
         energies = torsion_energies_from_ff_parameters(system, coordinate_transform, temperature, discrete_torsions)
-    else:
+    elif method == "scan":
         if coordinates is None:
             raise ValueError("torsion scan requires coordinates")
         energies = torsion_energies_from_scan(system, coordinate_transform, coordinates, temperature, discrete_torsions)
+    else:
+        raise ValueError("method for torsion marginal must be 'scan' or 'ff'")
 
     # clip and normalize energies, so that \int e^(-u) = 1
     energies = torch.tensor(energies)
@@ -257,9 +259,9 @@ def torsion_energies_from_scan(
         coordinates,
         temperature,
         discrete_torsions,
+        progress_bar=lambda _: _
 ):
 #def torsion_scan(system, coordinate_transform, coordinates, num_bins, progress_bar=lambda _: _):
-    pass
     """Scan torsion potential energies of intramolecular force field terms.
 
     Parameters
@@ -282,34 +284,25 @@ def torsion_energies_from_scan(
     bin_edges : torch.Tensor
         The values at which the energies were evaluated (shape=(num_bins + 1,)).    
     """
+    # discrete_torsions has shape (n_torsions, n_discrete_torsions)
+
     icsystem = _ic_system(system)
     z_matrix = coordinate_transform._rel_ic._z_matrix
     normalize_angles = coordinate_transform._rel_ic._normalize_angles
     # TODO: need a better interface for the Z-matrix and for the _normalize_angles flag
-    if normalize_angles:
-        bin_edges = torch.linspace(0., 1., steps=num_bins + 1).to(coordinates)
-    else:
-        bin_edges = torch.linspace(-np.pi, np.pi, steps=num_bins + 1).to(coordinates)
 
-    # get equilibrium bonds
-    bonds, _ = lookup_bonds(system, z_matrix[..., :2], 1.)
-    bonds = torch.tensor([bonds]).to(coordinates)
-
-    # get equilibrium angles
-    angles, _ = lookup_angles(system, z_matrix[..., :3], 1.)
-    angles = torch.tensor([angles]).to(coordinates)
     if normalize_angles:
-        angles = (angles + np.pi) / (2 * np.pi)
+        discrete_torsions = discrete_torsions / (2*np.pi)
 
     # compute torsion energies (TODO: maybe use the OpenMM bridge here if this ever becomes a bottleneck)
-    start_bonds, start_angles, start_torsions, start_z_fixed, _ = coordinate_transform._forward(coordinates[None, ...])
-    energies = torch.zeros((len(z_matrix), num_bins + 1)).to(coordinates)
+    start_bonds, start_angles, start_torsions, start_z_fixed, _ = coordinate_transform.forward(coordinates[None, ...])
+    energies = torch.zeros(len(z_matrix), len(discrete_torsions)).to(coordinates)
     context = mm.Context(system, mm.VerletIntegrator(0.001), mm.Platform.getPlatformByName("CPU"))
     for i in progress_bar(range(len(z_matrix))):
-        for j, torsion_angle in enumerate(bin_edges):
+        for j, torsion_angle in enumerate(discrete_torsions):
             torsions = start_torsions.clone()
             torsions[0, i] = torsion_angle
-            coords, _ = coordinate_transform._inverse(bonds, angles, torsions, start_z_fixed)
+            coords, _ = coordinate_transform.forward(bonds, angles, torsions, start_z_fixed, inverse=True)
             context.setPositions(coords[0].detach().cpu().numpy().reshape(-1, 3))
             energies[i, j] = context.getState(getEnergy=True).getPotentialEnergy().value_in_unit(
                 unit.kilojoule_per_mole)
@@ -317,7 +310,7 @@ def torsion_energies_from_scan(
             warnings.warn(
                 f"Torsions are not periodic; found {energies[i, -1]:.2f}, expected {energies[i, 0]:.2f} kJ/mol")
 
-    return energies, bin_edges
+    return energies
 
 
 def _torsions_to_distances14(torsions, bonds, angles):

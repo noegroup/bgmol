@@ -6,11 +6,11 @@ import torch
 from bgmol.util.ff import (
     bond_parameters, bond_constraints, bond_marginal_estimate, angle_marginal_estimate,
     torsion_marginal_cdf_estimate, N_MAX_TORSION_TERMS, lookup_torsions,
-    torsion_energies_from_ff_parameters
+    torsion_energies_from_ff_parameters, torsion_energies_from_scan, _ic_system
 )
-from bgmol.systems.ala2 import DEFAULT_GLOBAL_Z_MATRIX
+from bgmol.systems.ala2 import DEFAULT_GLOBAL_Z_MATRIX, DEFAULT_Z_MATRIX, DEFAULT_RIGID_BLOCK
 from bgmol.systems.ala2 import AlanineDipeptideTSF
-from bgflow import GlobalInternalCoordinateTransformation
+from bgflow import GlobalInternalCoordinateTransformation, MixedCoordinateTransformation
 from bgmol.util.importing import import_openmm
 mm, unit, _ = import_openmm()
 
@@ -156,14 +156,18 @@ def test_torsion_energies():
 
 
 @pytest.mark.parametrize("normalize", [True, False])
-def test_torsion_marginal_estimate(ala2dataset, ctx, normalize):
-    pytest.importorskip("bgflow.nn.flow.spline.PeriodicTabulatedTransform")
+@pytest.mark.parametrize("method", ["scan", "ff"])
+def test_torsion_marginal_estimate(method, ctx, normalize):
+   # pytest.importorskip("bgflow.nn.flow.spline.PeriodicTabulatedTransform")
+    ala2 = AlanineDipeptideTSF()
+    positions = torch.tensor(ala2.positions, **ctx)
     crd_trafo = GlobalInternalCoordinateTransformation(
         DEFAULT_GLOBAL_Z_MATRIX, normalize_angles=normalize
     ).to(**ctx)
-    estimate = torsion_marginal_cdf_estimate(ala2dataset.system.system, crd_trafo, 300.).to(**ctx)
+    estimate = torsion_marginal_cdf_estimate(ala2.system, crd_trafo, 300., method=method, coordinates=positions)
+    estimate = estimate.to(**ctx)
 
-    _, _, torsions, *_ = crd_trafo.forward(torch.tensor(ala2dataset.xyz, **ctx).reshape(-1, 66))
+    _, _, torsions, *_ = crd_trafo.forward(positions.reshape(-1, 66))
     tol = 0.1 if normalize else np.pi * 0.1
     uniform = estimate.forward(torsions)[0]
     assert torch.allclose(uniform.mean(dim=0), 0.5 * torch.ones_like(uniform[0]), atol=0.35)
@@ -171,8 +175,9 @@ def test_torsion_marginal_estimate(ala2dataset, ctx, normalize):
     assert torch.all(uniform.max(dim=0).values <= 1.)
 
 
-def test_ic_system(ala2dataset):
-    icsystem = ic_system(ala2dataset.system.system)
+def test_ic_system():
+    ala2 = AlanineDipeptideTSF()
+    icsystem = _ic_system(ala2.system)
     # make sure the nonbonded forces have been deleted
     for f in icsystem.getForces():
         assert not isinstance(f, mm.NonbondedForce)
@@ -182,18 +187,18 @@ def test_ic_system(ala2dataset):
 
 
 @pytest.mark.parametrize("normalize_angles", (False, True))
-def test_torsion_scan(ala2dataset, normalize_angles):
+def test_torsion_scan(normalize_angles, ala2dataset, **ctx):
     # TODO: bugfix and enable for normalized_angles
-    system = ala2dataset.system.system
+    ala2 = ala2dataset.system
+    data = torch.tensor(ala2dataset.xyz, **ctx).reshape(-1, 22)
     num_bins = 24
-    z_matrix = ala2.system.z_matrix
     trafo = MixedCoordinateTransformation(
-        data=torch.tensor(ala2.coordinates),
-        z_matrix=z_matrix,
-        fixed_atoms=np.array([6, 8, 9, 10, 14]),
+        data=torch.tensor(ala2dataset.xyz, **ctx),
+        z_matrix=DEFAULT_Z_MATRIX,
+        fixed_atoms=DEFAULT_RIGID_BLOCK,
         normalize_angles=normalize_angles
     )
-    energies, bins = torsion_scan(system, trafo, torch.tensor(ala2.coordinates[0]), num_bins=num_bins)
-    assert energies.shape == (len(z_matrix), num_bins + 1)
+    energies, bins = torsion_energies_from_scan(ala2.system, trafo, data[0], torchnum_bins=num_bins)
+    assert energies.shape == (len(DEFAULT_Z_MATRIX), num_bins + 1)
     # assert continuity around the periodic boundary
     assert torch.allclose(energies[:, 0], energies[:, -1])
