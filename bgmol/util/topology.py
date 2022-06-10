@@ -18,6 +18,10 @@ def find_rings(mdtraj_topology: md.Topology):
     -------
     ring_atoms: List[List[int]]
         Atoms constituting each ring
+
+    Notes
+    -----
+    Requires networkx.
     """
     import networkx as nx
     graph = mdtraj_topology.to_bondgraph()
@@ -32,6 +36,10 @@ def is_ring_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: md.Topol
     -------
     is_ring : np.ndarray
         A boolean array which contains 1 for torsions of ring atoms and 0 for others
+
+    Notes
+    -----
+    Requires networkx.
     """
     is_ring = np.zeros(len(torsions), dtype=bool)
     rings = find_rings(mdtraj_topology)
@@ -61,10 +69,6 @@ def is_proper_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: md.Top
     -------
     is_proper : np.ndarray
         A boolean array which contains 1 for proper and 0 for improper torsions.
-
-    Notes
-    -----
-    Requires networkx.
     """
     is_proper = np.zeros(len(torsions), dtype=bool)
     graph = mdtraj_topology.to_bondgraph()
@@ -81,7 +85,7 @@ def is_proper_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: md.Top
     return is_proper
 
 
-def is_methyl_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: md.Topology):
+def is_methyl_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: md.Topology, general: bool = False):
     """Whether torsions are the first (proper) torsion of a methyl group.
     Methyl hydrogens are placed by one proper and two improper torsions. This function only indicates the former.
 
@@ -90,15 +94,13 @@ def is_methyl_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: md.Top
     torsions : np.ndarray or Sequence[Sequence[int]]
         A list of torsions or a zmatrix.
     mdtraj_topology : md.Topology
+    general : bool
+        If true any group containing three H atoms is selected, not just methyl.
 
     Returns
     -------
     is_methyl : np.ndarray
-        A boolean array which contains 1 for proper and 0 for improper torsions.
-
-    Notes
-    -----
-    Requires networkx.
+        A boolean array which contains 1 for proper methyl torsion and 0 otherwise
     """
     is_methyl = np.zeros(len(torsions), dtype=bool)
     is_proper = is_proper_torsion(torsions, mdtraj_topology)
@@ -110,8 +112,8 @@ def is_methyl_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: md.Top
         if not atom.element.symbol == "H":
             continue
         neighbor = list(graph.neighbors(atom))[0]
-        if not neighbor.element.symbol == "C":
-            continue
+        if not general and not neighbor.element.symbol == "C":
+              continue
         carbon_neighbors = graph.neighbors(neighbor)
         n_hydrogens = sum(n.element.symbol == "H" for n in carbon_neighbors)
         if n_hydrogens == 3:
