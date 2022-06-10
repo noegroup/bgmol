@@ -113,7 +113,7 @@ def is_methyl_torsion(torsions: Sequence[Sequence[int]], mdtraj_topology: md.Top
             continue
         neighbor = list(graph.neighbors(atom))[0]
         if not general and not neighbor.element.symbol == "C":
-              continue
+            continue
         carbon_neighbors = graph.neighbors(neighbor)
         n_hydrogens = sum(n.element.symbol == "H" for n in carbon_neighbors)
         if n_hydrogens == 3:
