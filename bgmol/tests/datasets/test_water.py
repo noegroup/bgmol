@@ -1,8 +1,10 @@
+import pytest
 
-from bgmol.datasets.water import DimerFlexibleTIP3P
+from bgmol.datasets.water import WaterDimerFlexibleTIP3P, WaterDimerRigidTIP3P
 
 
-def test_water_dimer(tmpdir):
-    dimer = DimerFlexibleTIP3P(root=str(tmpdir), read=True, download=True)
+@pytest.mark.parametrize("Dataset", [WaterDimerRigidTIP3P, WaterDimerFlexibleTIP3P])
+def test_water_dimer(tmpdir, Dataset):
+    dimer = Dataset(root=str(tmpdir), read=True, download=True)
     assert dimer.coordinates.shape == (50000, 6, 3)
     assert dimer.forces.shape == (50000, 6, 3)
