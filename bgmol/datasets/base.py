@@ -1,7 +1,11 @@
 
 import os
+from typing import Sequence, Callable
 import numpy as np
 import mdtraj as md
+import torch
+import torch.utils.data
+
 from bgmol.tpl.hdf5 import load_hdf5, HDF5TrajectoryFile
 
 from ..util.importing import import_openmm
@@ -147,3 +151,54 @@ class DataSet:
         self._forces = frames.forces
         f.close()
 
+    def torch_datasets(
+            self,
+            fields: Sequence[str] = ("coordinates",),
+            shuffle: bool = True,
+            random_seed: int = 1,
+            val_fraction: float = 0.2,
+            test_fraction: float = 0.0,
+            process_array_fn: Callable = lambda x: torch.tensor(x)
+    ) -> Sequence[torch.utils.data.TensorDataset]:
+        """Get torch datasets for these data.
+
+        Parameters
+        ----------
+            fields :
+                A list of strings that correspond to attributes of this dataset.
+            shuffle :
+                Whether to shuffle each field
+            random_seed :
+                The random seed to be used for shuffling
+            val_fraction :
+                The fraction of data to be used as validation data
+            test_fraction :
+                The fraction of data to be used as test data
+            process_array_fn :
+                A function to turn the numpy array into a tensor
+
+        Returns
+        -------
+            train_dataset :  torch.utils.data.TensorDataset
+            validation_dataset : torch.utils.data.TensorDataset
+            test_dataset : torch.utils.data.TensorDataset
+
+
+        """
+        if shuffle:
+            rg_state = np.random.get_state()
+            np.random.seed(random_seed)
+            indices = np.random.permutation(len(self))
+            np.random.set_state(rg_state)
+        else:
+            indices = np.arange(len(self))
+        n_test = int(test_fraction * len(self))
+        n_val = int(val_fraction * len(self))
+        n_train = len(self) - n_test - n_val
+        train_arrays = [getattr(self, key)[indices[:n_train]] for key in fields]
+        val_arrays = [getattr(self, key)[indices[n_train:n_train + n_val]] for key in fields]
+        test_arrays = [getattr(self, key)[indices[n_train+n_val:]] for key in fields]
+        trainset = torch.utils.data.TensorDataset(*[process_array_fn(arr) for arr in train_arrays])
+        valset = torch.utils.data.TensorDataset(*[process_array_fn(arr) for arr in val_arrays])
+        testset = torch.utils.data.TensorDataset(*[process_array_fn(arr) for arr in test_arrays])
+        return trainset, valset, testset
