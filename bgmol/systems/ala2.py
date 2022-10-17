@@ -103,7 +103,7 @@ class AlanineDipeptideTSF(OpenMMSystem):
 
 class AlanineDipeptideImplicit(OpenMMToolsTestSystem):
     def __init__(self, constraints=app.HBonds, hydrogenMass=None):
-        super().__init__("AlanineDipeptideImplicit", constraints=constraints, hydrogenMass=None)
+        super().__init__("AlanineDipeptideImplicit", constraints=constraints, hydrogenMass=hydrogenMass)
         self.z_matrix = DEFAULT_Z_MATRIX.copy()
         self.rigid_block = DEFAULT_RIGID_BLOCK.copy()
 
