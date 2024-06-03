@@ -27,12 +27,8 @@ import numpy as np
 from mdtraj import version
 from mdtraj.core.topology import _topology_from_subset, Topology
 from mdtraj.utils import unitcell
-from mdtraj.utils.six import PY3
-if PY3:
-    basestring = str
 import mdtraj.core.element as elem
 from mdtraj.utils import in_units_of, ensure_type, import_, cast_indices
-from mdtraj.utils.six import string_types
 from ..util.importing import import_openmm
 
 try:
@@ -94,7 +90,7 @@ def load_hdf5(filename, stride=None, atom_indices=None, frame=None):
     --------
     mdtraj.HDF5TrajectoryFile :  Low level interface to HDF5 files
     """
-    if not isinstance(filename, string_types):
+    if not isinstance(filename, str):
         raise TypeError('filename must be of type string for load_lh5. '
             'you supplied %s' % type(filename))
 
@@ -1027,7 +1023,7 @@ class HDF5Reporter(object):
                  temperature=True, velocities=False, forces=False, atomSubset=None):
         """Create a HDF5Reporter.
         """
-        if isinstance(file, basestring):
+        if isinstance(file, str):
             self._traj_file = self.backend(file, 'w')
         elif isinstance(file, self.backend):
             self._traj_file = file
